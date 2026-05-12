@@ -1,5 +1,5 @@
 from datetime import datetime
-from config import logger
+from core.config import logger
 
 def _map_status_from_db(status_str: str) -> str:
     """Map status string from Divar to core backend schema."""
@@ -28,14 +28,22 @@ def _normalize_prices(data: dict) -> dict:
 
     price = to_float(data.get("price", 0))
     if price > 0:
-        data["price"] = int(price * 1_000_000)
+        # اگر عدد کمتر از ۱۰۰،۰۰۰ باشد، احتمالا به میلیون است (مثلا ۵۵۰۰ میلیون تومان)
+        # اگر بیشتر باشد، احتمالا قیمت کل به تومان است
+        if price < 100000:
+            data["price"] = int(price * 1_000_000)
+        else:
+            data["price"] = int(price)
     
     price_per_meter = to_float(data.get("price_per_meter", 0))
     if price_per_meter > 0:
-        data["price_per_meter"] = int(price_per_meter * 1_000_000)
+        if price_per_meter < 1000:
+            data["price_per_meter"] = int(price_per_meter * 1_000_000)
+        else:
+            data["price_per_meter"] = int(price_per_meter)
     
     area = to_float(data.get("area", 0))
-    if area > 0 and price > 0:
+    if area > 0 and data.get("price", 0) > 0:
         data["vpm"] = int(data["price"] / area)
     
     return data
