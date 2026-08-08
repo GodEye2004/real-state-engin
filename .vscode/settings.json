@@ -1,8 +1,0 @@
-{
-    "python-envs.pythonProjects": [],
-    "python.defaultInterpreterPath": "/Users/mohammadmahdi/Documents/scraper/.venv/bin/python",
-    "python.analysis.extraPaths": [
-        "./",
-        "./src"
-    ]
-}
