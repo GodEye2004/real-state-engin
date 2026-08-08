@@ -55,7 +55,7 @@ async def verify_otp(data: OTPVerification, db: AsyncSession = Depends(get_db)):
     # if otp.expires_at < datetime.utcnow():
     #     raise HTTPException(status_code=400, detail="OTP expired")
 
-    otp.is_used = True
+    otp.is_used = True # type: ignore
 
     result = await db.execute(select(User).where(User.phone == data.phone))
 

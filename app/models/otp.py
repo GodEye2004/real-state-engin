@@ -21,7 +21,7 @@ class OTPRequest(BaseModel):
     phone: str = Field(
         ...,
         example="09123456789",
-    )
+    ) # type: ignore
 
 
 @field_validator("phone")
@@ -39,7 +39,7 @@ def validate_phone(cls, v: str):
 
 
 class OTPVerification(OTPRequest):
-    code: str = Field(..., example="1234", min_length=4, max_length=4)
+    code: str = Field(..., example="1234", min_length=4, max_length=4) # type: ignore
 
 
 class OTPResponse(BaseModel):

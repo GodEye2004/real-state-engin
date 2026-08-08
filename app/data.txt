@@ -1,0 +1,1005 @@
+  "last_modified_at": "2026-08-08T10:51:53.707791Z",
+      "city": "tehran",
+      "title": "فروش اکباتان فاز ۲ ، سه خوابه",
+      "price": {
+        "mode": "مقطوع",
+        "value": "42000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 173,
+        "year": 1370,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 11
+      }
+    
+    {
+      "token": "gaW1x1Cb",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:52:16.406404Z",
+      "city": "tehran",
+      "title": "۸۰متر/دو خوابه/فول بازسازی/کم واحد/تاپ لوکیشن",
+      "price": {
+        "mode": "مقطوع",
+        "value": "16000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 80,
+        "year": 1392,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 1
+      }
+    },
+    {
+      "token": "gaaEN0Y8",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:37.875925Z",
+      "city": "tehran",
+      "title": "۹۲ متر ۲ خوابه / ریحانی / فول / روبه آفتاب",
+      "price": {
+        "mode": "مقطوع",
+        "value": "25600000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 92,
+        "year": 1390,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 4
+      }
+    },
+    {
+      "token": "gaTFmOds",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:35.539586Z",
+      "city": "tehran",
+      "title": "۸۵متر/نوساز/همیلا/نهج البلاغه کنارته",
+      "price": {
+        "mode": "مقطوع",
+        "value": "38000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 85,
+        "year": 1404,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 4
+      }
+    },
+    {
+      "token": "ga3lQ-Fk",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:42.168591Z",
+      "city": "tehran",
+      "title": "40متر،1خواب/تکواحدی/ مخبر جنوبی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "4750000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 40,
+        "year": 1389,
+        "has_parking": false,
+        "has_elevator": false,
+        "rooms": "یک",
+        "floor": 3
+      }
+    },
+    {
+      "token": "ga2xeNtV",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:36.812330Z",
+      "city": "tehran",
+      "title": "فروش آپارتمان ۱۵۰ متری ۳ خواب، فول تک و واحدی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "54000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 150,
+        "year": 1405,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 4
+      }
+    },
+    {
+      "token": "gaYFOfMk",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:23.206751Z",
+      "city": "tehran",
+      "title": "۵۶متر تک خواب فول باز سازی پارکینگ غیر مزاحم باکس",
+      "price": {
+        "mode": "مقطوع",
+        "value": "8550000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 56,
+        "year": 1385,
+        "has_parking": true,
+        "has_elevator": false,
+        "rooms": "یک",
+        "floor": 0
+      }
+    },
+    {
+      "token": "ga3lwg-C",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:25.862060Z",
+      "city": "tehran",
+      "title": "فروش آپارتمان ۱۶۲ متری، ۳ خواب",
+      "price": {
+        "mode": "مقطوع",
+        "value": "45000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 162,
+        "year": 1383,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 1
+      }
+    },
+    {
+      "token": "ga3lg3jH",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:28.203719Z",
+      "city": "tehran",
+      "title": "آپارتمان۱۰۰متری نوساز ، دو خواب ، ویوی باز و زیبا",
+      "price": {
+        "mode": "مقطوع",
+        "value": "2850000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 100,
+        "year": 1401,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 5
+      }
+    },
+    {
+      "token": "ga1NPLiR",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:23.384476Z",
+      "city": "tehran",
+      "title": "مرزداران ۱۸۵ متر ۳ خواب / آکواریم واقعی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "75000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 185,
+        "year": 1403,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 3
+      }
+    },
+    {
+      "token": "ga3lA0Nq",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:15.777969Z",
+      "city": "tehran",
+      "title": "آپارتمان ۱۲۸ متری مرزداران ۲ پارکینگ  ۴ ساله",
+      "price": {
+        "mode": "مقطوع",
+        "value": "44000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 128,
+        "year": 1400,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 5
+      }
+    },
+    {
+      "token": "ga3lQ-16",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:32.411924Z",
+      "city": "tehran",
+      "title": "۷۴ متر دو خواب / ط اول با پارکینگ / شهرک یاس",
+      "price": {
+        "mode": "مقطوع",
+        "value": "13200000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 74,
+        "year": 1386,
+        "has_parking": true,
+        "has_elevator": false,
+        "rooms": "دو",
+        "floor": 1
+      }
+    },
+    {
+      "token": "ga2pPhzQ",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:02.712166Z",
+      "city": "tehran",
+      "title": "۱۰۲متر/دوخواب/فول امکانات/دسترسی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "15300000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 102,
+        "year": 1402,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 6
+      }
+    },
+    {
+      "token": "ga2Ffqok",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:55.559346Z",
+      "city": "tehran",
+      "title": "۱۳۸ متر فول استثنایی فقط امروز",
+      "price": {
+        "mode": "مقطوع",
+        "value": "37200000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 138,
+        "year": 1395,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 4
+      }
+    },
+    {
+      "token": "ga3lAvhb",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:53.578497Z",
+      "city": "tehran",
+      "title": "آپارتمان ۶۵ متری ارجمندی راد",
+      "price": {
+        "mode": "مقطوع",
+        "value": "7200000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 65,
+        "year": 1382,
+        "has_parking": false,
+        "has_elevator": false,
+        "rooms": "یک",
+        "floor": 2
+      }
+    },
+    {
+      "token": "ga3lQ5C4",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:17.336499Z",
+      "city": "tehran",
+      "title": "واحدنقلی‌/خوش‌چیدمان/کم‌واحد/سند‌تک‌برگ",
+      "price": {
+        "mode": "مقطوع",
+        "value": "6700000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 55,
+        "year": 1404,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "یک",
+        "floor": 2
+      }
+    },
+    {
+      "token": "ga3hQJp5",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:33.607198Z",
+      "city": "tehran",
+      "title": "رونیکا پالاس آبشار /زیرقیمت بازار/ویو ابدی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "30000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 130,
+        "year": 1405,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 12
+      }
+    },
+    {
+      "token": "gaj9Wqs5",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:18.453761Z",
+      "city": "tehran",
+      "title": "فرصتی محدود جهت سرمایه کذاری باسود دهی بالا",
+      "price": {
+        "mode": "مقطوع",
+        "value": "4780000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 46,
+        "year": 1400,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "یک",
+        "floor": 2
+      }
+    },
+    {
+      "token": "gadlrg1I",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:13.416673Z",
+      "city": "tehran",
+      "title": "۴۸متر ۱خواب کرمان شمالی ثامنی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "9000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 48,
+        "year": 1390,
+        "has_parking": false,
+        "has_elevator": true,
+        "rooms": "یک",
+        "floor": 1
+      }
+    },
+    {
+      "token": "ga3lA0zr",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:28.395652Z",
+      "city": "tehran",
+      "title": "50متر پلان مهندسی خوش چیدمان",
+      "price": {
+        "mode": "مقطوع",
+        "value": "8000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 50,
+        "year": 1400,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "یک",
+        "floor": 2
+      }
+    },
+    {
+      "token": "gan1BN2l",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:10.716425Z",
+      "city": "tehran",
+      "title": "الهیه۱۲۵متردوخواب ساختمانی با اصالت ویو مشجر",
+      "price": {
+        "mode": "مقطوع",
+        "value": "67000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 125,
+        "year": 1375,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 3
+      }
+    },
+    {
+      "token": "gak9mRZZ",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:48.329195Z",
+      "city": "tehran",
+      "title": "۶۸ متری / فول امکانات / ۲ خوابه",
+      "price": {
+        "mode": "مقطوع",
+        "value": "6200000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 68,
+        "year": 1395,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 2
+      }
+    },
+    {
+      "token": "ga3lAuBE",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:30.806640Z",
+      "city": "tehran",
+      "title": "۵۵متر*دوخواب*فول باز سازی تاپ لوکیشن",
+      "price": {
+        "mode": "مقطوع",
+        "value": "7500000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 55,
+        "year": 1382,
+        "has_parking": false,
+        "has_elevator": false,
+        "rooms": "دو",
+        "floor": 2
+      }
+    },
+    {
+      "token": "ga2x9sT0",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:43.161723Z",
+      "city": "tehran",
+      "title": "۵۵متر   بازسازی کامل   میدان ۵۷ هفت حوض",
+      "price": {
+        "mode": "مقطوع",
+        "value": "11000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 55,
+        "year": 1385,
+        "has_parking": false,
+        "has_elevator": false,
+        "rooms": "یک",
+        "floor": 2
+      }
+    },
+    {
+      "token": "ga3lAftR",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:44.893774Z",
+      "city": "tehran",
+      "title": "اپارتمان۸۶ متری با آسانسور دو خواب تخلیه",
+      "price": {
+        "mode": "مقطوع",
+        "value": "11000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 86,
+        "year": 1392,
+        "has_parking": false,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 4
+      }
+    },
+    {
+      "token": "ga3lgn3a",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:50:26.529175Z",
+      "city": "tehran",
+      "title": "فروش واحد ۳۰۰ متر ۴ خواب تکواحدی طبقه ۴ جردن",
+      "price": {
+        "mode": "مقطوع",
+        "value": "90000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 300,
+        "year": 1385,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "چهار",
+        "floor": 4
+      }
+    },
+    {
+      "token": "ga3lgoEH",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:35.310357Z",
+      "city": "tehran",
+      "title": "۴۱ متر / ۱  خواب / پارکینگ غیر مزاحم / طبقه ۱",
+      "price": {
+        "mode": "مقطوع",
+        "value": "7100000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 41,
+        "year": 1385,
+        "has_parking": true,
+        "has_elevator": false,
+        "rooms": "یک",
+        "floor": 1
+      }
+    },
+    {
+      "token": "ga3dgAaT",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:52:05.483565Z",
+      "city": "tehran",
+      "title": "زیرقیمت منطقه/کم سن/سالن پرده خور/فول امکانات",
+      "price": {
+        "mode": "مقطوع",
+        "value": "14850000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 62,
+        "year": 1399,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "یک",
+        "floor": 1
+      }
+    },
+    {
+      "token": "ga3lQkek",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:33.081288Z",
+      "city": "tehran",
+      "title": "۷۰متر ،شیک و مدرن ،پارکینگ واسانسور ،پرادخت شرایطی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "12200000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 70,
+        "year": 1399,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 3
+      }
+    },
+    {
+      "token": "ga3lQXLA",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:51:07.962094Z",
+      "city": "tehran",
+      "title": "۱۴۷متر/سه خوابه/رو به نما/کم واحد",
+      "price": {
+        "mode": "مقطوع",
+        "value": "27900000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 147,
+        "year": 1398,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 5
+      }
+    },
+    {
+      "token": "gaOhxpXS",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:13.611266Z",
+      "city": "tehran",
+      "title": "۱۵۰متر آپارتمان ۳خوابه سعادت آباد",
+      "price": {
+        "mode": "مقطوع",
+        "value": "53000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 150,
+        "year": 1387,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 3
+      }
+    },
+    {
+      "token": "ga3lAOuS",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:26.297799Z",
+      "city": "tehran",
+      "title": "آپارتمان 78متری خوش نقشه",
+      "price": {
+        "mode": "مقطوع",
+        "value": "15500000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 78,
+        "year": 1394,
+        "has_parking": false,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 5
+      }
+    },
+    {
+      "token": "ga0JnaFS",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:17.242528Z",
+      "city": "tehran",
+      "title": "۴۱مترآسانسوربازسازی شده سهروردی شریعتی روبروی ملک",
+      "price": {
+        "mode": "مقطوع",
+        "value": "9900000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 41,
+        "year": 1385,
+        "has_parking": false,
+        "has_elevator": true,
+        "rooms": "یک",
+        "floor": 4
+      }
+    },
+    {
+      "token": "gatRbOVX",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:05.800868Z",
+      "city": "tehran",
+      "title": "۸۸ متر /  فول دیزاین / نقشه ژورنالی /  تاپ لوکیشن",
+      "price": {
+        "mode": "مقطوع",
+        "value": "27000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 88,
+        "year": 1398,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 2
+      }
+    },
+    {
+      "token": "gaSpit8q",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:09.228132Z",
+      "city": "tehran",
+      "title": "۱38 متر نوساز  صراف های جنوبی ( تک واحدی )",
+      "price": {
+        "mode": "مقطوع",
+        "value": "88000000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 138,
+        "year": 1405,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "سه",
+        "floor": 1
+      }
+    },
+    {
+      "token": "ga3lQinN",
+      "category": "apartment-sell",
+      "last_modified_at": "2026-08-08T10:49:30.701422Z",
+      "city": "tehran",
+      "title": "۶۶ متر / نقلی / بدونه پرتی",
+      "price": {
+        "mode": "مقطوع",
+        "value": "18300000000"
+      },
+      "real_estate_fields": {
+        "credit": {
+          "mode": "",
+          "value": "0"
+        },
+        "rent": {
+          "mode": "",
+          "value": "0"
+        },
+        "daily_rent": "0",
+        "size": 66,
+        "year": 1388,
+        "has_parking": true,
+        "has_elevator": true,
+        "rooms": "دو",
+        "floor": 2
+      }
+    }
