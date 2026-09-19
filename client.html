@@ -1,349 +1,1017 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جستجوی هوشمند دیوار</title>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
-    <style>
-        :root { --primary-color: #a62626; --bg-color: #f5f5f5; --chat-bg: #ffffff; --user-msg: #ffebee; --bot-msg: #f0f0f0; --text-main: #212121; --text-light: #757575; --notif-color: #2e7d32; --status-running: #1976d2; --status-done: #2e7d32; --status-error: #c62828; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Vazirmatn', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .container { width: 100%; max-width: 600px; background-color: var(--chat-bg); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); overflow: hidden; display: flex; flex-direction: column; height: 90vh; }
-        .header { background-color: var(--primary-color); color: white; padding: 20px; text-align: center; font-size: 1.2rem; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; display: flex; justify-content: center; align-items: center; gap: 10px;}
-        .live-badge { background-color: #ff5252; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; animation: pulse 2s infinite; display: none;}
-        #chat { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background-color: #fbfbfb; scroll-behavior: smooth; }
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>جستجوی هوشمند دیوار</title>
+        <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css"/>
+        <style>
+            :root {
+                --primary-color: #a62626;
+                --bg-color: #f5f5f5;
+                --chat-bg: #ffffff;
+                --user-msg: #ffebee;
+                --bot-msg: #f0f0f0;
+                --text-main: #212121;
+                --text-light: #757575;
+                --notif-color: #2e7d32;
+                --status-running: #1976d2;
+                --status-done: #2e7d32;
+                --status-error: #c62828;
+            }
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: "Vazirmatn", sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-main);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            .container {
+                width: 100%;
+                max-width: 600px;
+                background-color: var(--chat-bg);
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                height: 90vh;
+            }
+            .header {
+                background-color: var(--primary-color);
+                color: white;
+                padding: 20px;
+                text-align: center;
+                font-size: 1.2rem;
+                font-weight: 700;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                z-index: 10;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+            }
+            .live-badge {
+                background-color: #ff5252;
+                color: white;
+                padding: 3px 8px;
+                border-radius: 10px;
+                font-size: 0.75rem;
+                font-weight: bold;
+                animation: pulse 2s infinite;
+                display: none;
+            }
+            #chat {
+                flex-grow: 1;
+                padding: 20px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                background-color: #fbfbfb;
+                scroll-behavior: smooth;
+            }
 
-        /* Status panel */
-        .status-panel { display: none; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; margin-bottom: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-        .status-panel.visible { display: block; animation: fadeIn 0.3s ease-in-out; }
-        .status-panel-title { font-weight: bold; font-size: 0.85rem; color: var(--text-light); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        .status-steps { display: flex; flex-direction: column; gap: 6px; }
-        .status-step { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; background: #f9f9f9; transition: all 0.3s; }
-        .status-step.running { background: #e3f2fd; }
-        .status-step.done { background: #e8f5e9; }
-        .status-step.error { background: #ffebee; }
-        .status-step.hidden { display: none; }
-        .step-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #ccc; }
-        .status-step.running .step-dot { background: var(--status-running); animation: pulse 1s infinite; }
-        .status-step.done .step-dot { background: var(--status-done); }
-        .status-step.error .step-dot { background: var(--status-error); }
-        .step-text { flex-grow: 1; }
-        .step-progress { width: 60px; height: 4px; background: #e0e0e0; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
-        .step-progress-bar { height: 100%; background: var(--status-running); border-radius: 2px; transition: width 0.3s; }
-        .status-step.done .step-progress { display: none; }
+            /* Status panel */
+            .status-panel {
+                display: none;
+                background: #fff;
+                border: 1px solid #e8e8e8;
+                border-radius: 10px;
+                padding: 14px;
+                margin-bottom: 5px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            }
+            .status-panel.visible {
+                display: block;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            .status-panel-title {
+                font-weight: bold;
+                font-size: 0.85rem;
+                color: var(--text-light);
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .status-steps {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .status-step {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                background: #f9f9f9;
+                transition: all 0.3s;
+            }
+            .status-step.running {
+                background: #e3f2fd;
+            }
+            .status-step.done {
+                background: #e8f5e9;
+            }
+            .status-step.error {
+                background: #ffebee;
+            }
+            .status-step.hidden {
+                display: none;
+            }
+            .step-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                flex-shrink: 0;
+                background: #ccc;
+            }
+            .status-step.running .step-dot {
+                background: var(--status-running);
+                animation: pulse 1s infinite;
+            }
+            .status-step.done .step-dot {
+                background: var(--status-done);
+            }
+            .status-step.error .step-dot {
+                background: var(--status-error);
+            }
+            .step-text {
+                flex-grow: 1;
+            }
+            .step-progress {
+                width: 60px;
+                height: 4px;
+                background: #e0e0e0;
+                border-radius: 2px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .step-progress-bar {
+                height: 100%;
+                background: var(--status-running);
+                border-radius: 2px;
+                transition: width 0.3s;
+            }
+            .status-step.done .step-progress {
+                display: none;
+            }
 
-        /* Live browser view */
-        .browser-panel { display: none; background: #1e1e1e; border: 1px solid #333; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .browser-panel.visible { display: block; animation: fadeIn 0.3s ease-in-out; }
-        .browser-toolbar { background: #2d2d2d; padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #444; }
-        .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
-        .browser-dot.red { background: #ff5f57; }
-        .browser-dot.yellow { background: #febc2e; }
-        .browser-dot.green { background: #28c840; }
-        .browser-url-bar { flex-grow: 1; background: #3a3a3a; color: #ccc; border-radius: 6px; padding: 4px 10px; font-size: 0.7rem; text-align: left; direction: ltr; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        .browser-viewport { position: relative; line-height: 0; }
-        .browser-viewport img { width: 100%; display: block; }
-        .browser-preview-label { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; line-height: 1.4; z-index: 2; }
-        .browser-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #1e1e1e; color: #fff; font-size: 0.85rem; z-index: 3; }
-        .browser-loading.hidden { display: none; }
+            /* Live browser view */
+            .browser-panel {
+                display: none;
+                background: #1e1e1e;
+                border: 1px solid #333;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+            .browser-panel.visible {
+                display: block;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            .browser-toolbar {
+                background: #2d2d2d;
+                padding: 8px 12px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                border-bottom: 1px solid #444;
+            }
+            .browser-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+            }
+            .browser-dot.red {
+                background: #ff5f57;
+            }
+            .browser-dot.yellow {
+                background: #febc2e;
+            }
+            .browser-dot.green {
+                background: #28c840;
+            }
+            .browser-url-bar {
+                flex-grow: 1;
+                background: #3a3a3a;
+                color: #ccc;
+                border-radius: 6px;
+                padding: 4px 10px;
+                font-size: 0.7rem;
+                text-align: left;
+                direction: ltr;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+            .browser-viewport {
+                position: relative;
+                line-height: 0;
+            }
+            .browser-viewport img {
+                width: 100%;
+                display: block;
+            }
+            .browser-preview-label {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: rgba(0, 0, 0, 0.65);
+                color: #fff;
+                font-size: 0.7rem;
+                padding: 3px 10px;
+                border-radius: 12px;
+                line-height: 1.4;
+                z-index: 2;
+            }
+            .browser-loading {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #1e1e1e;
+                color: #fff;
+                font-size: 0.85rem;
+                z-index: 3;
+            }
+            .browser-loading.hidden {
+                display: none;
+            }
 
-        .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s ease-in-out; }
-        .user { align-self: flex-start; background-color: var(--user-msg); color: var(--primary-color); border-bottom-right-radius: 2px; }
-        .bot { align-self: flex-end; background-color: var(--bot-msg); color: var(--text-main); border-bottom-left-radius: 2px; }
-        .notif { align-self: center; background-color: #e8f5e9; border: 2px solid var(--notif-color); width: 100%; max-width: 100%; }
-        .notif-header { color: var(--notif-color); font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; text-align: center;}
-        .result-card { background: white; border: 1px solid #e0e0e0; padding: 15px; margin-top: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; }
-        .result-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .result-card a { color: var(--primary-color); font-weight: bold; text-decoration: none; font-size: 1.05rem; display: block; margin-bottom: 8px; }
-        .result-card a:hover { text-decoration: underline; }
-        .result-details { font-size: 0.85rem; color: var(--text-light); }
-        .load-more-btn { background-color: #fff; border: 2px solid var(--primary-color); color: var(--primary-color); padding: 8px 15px; border-radius: 20px; cursor: pointer; font-family: inherit; font-weight: bold; margin-top: 15px; display: block; width: 100%; transition: all 0.2s; }
-        .load-more-btn:hover { background-color: var(--primary-color); color: white; }
-        .load-more-btn:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; background-color: transparent; }
-        .input-area { display: flex; padding: 15px; background-color: white; border-top: 1px solid #eee; gap: 10px; }
-        input[type="text"] { flex-grow: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 25px; font-family: inherit; font-size: 0.95rem; outline: none; }
-        input[type="text"]:focus { border-color: var(--primary-color); }
-        button.send-btn { padding: 10px 25px; border: none; border-radius: 25px; background-color: var(--primary-color); color: white; font-family: inherit; font-size: 1rem; font-weight: bold; cursor: pointer; }
-        button.send-btn:hover { background-color: #8a1f1f; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            جستجوی هوشمند املاک گرگان
-            <div id="liveBadge" class="live-badge">🔴 LIVE</div>
-        </div>
-        <div id="chat">
-            <!-- Live browser view -->
-            <div id="browserPanel" class="browser-panel">
-                <div class="browser-toolbar">
-                    <span class="browser-dot red"></span>
-                    <span class="browser-dot yellow"></span>
-                    <span class="browser-dot green"></span>
-                    <div id="browserUrl" class="browser-url-bar">divar.ir</div>
+            .msg {
+                max-width: 85%;
+                padding: 12px 16px;
+                border-radius: 12px;
+                line-height: 1.6;
+                font-size: 0.95rem;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            .user {
+                align-self: flex-start;
+                background-color: var(--user-msg);
+                color: var(--primary-color);
+                border-bottom-right-radius: 2px;
+            }
+            .bot {
+                align-self: flex-end;
+                background-color: var(--bot-msg);
+                color: var(--text-main);
+                border-bottom-left-radius: 2px;
+            }
+            .notif {
+                align-self: center;
+                background-color: #e8f5e9;
+                border: 2px solid var(--notif-color);
+                width: 100%;
+                max-width: 100%;
+            }
+            .notif-header {
+                color: var(--notif-color);
+                font-weight: bold;
+                margin-bottom: 10px;
+                font-size: 1.1rem;
+                text-align: center;
+            }
+            .result-card {
+                background: white;
+                border: 1px solid #e0e0e0;
+                padding: 15px;
+                margin-top: 10px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+            }
+            .result-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            }
+            .result-card a {
+                color: var(--primary-color);
+                font-weight: bold;
+                text-decoration: none;
+                font-size: 1.05rem;
+                display: block;
+                margin-bottom: 8px;
+            }
+            .result-card a:hover {
+                text-decoration: underline;
+            }
+            .result-details {
+                font-size: 0.85rem;
+                color: var(--text-light);
+            }
+            .load-more-btn {
+                background-color: #fff;
+                border: 2px solid var(--primary-color);
+                color: var(--primary-color);
+                padding: 8px 15px;
+                border-radius: 20px;
+                cursor: pointer;
+                font-family: inherit;
+                font-weight: bold;
+                margin-top: 15px;
+                display: block;
+                width: 100%;
+                transition: all 0.2s;
+            }
+            .load-more-btn:hover {
+                background-color: var(--primary-color);
+                color: white;
+            }
+            .load-more-btn:disabled {
+                border-color: #ccc;
+                color: #ccc;
+                cursor: not-allowed;
+                background-color: transparent;
+            }
+
+            /* Search Form */
+            .search-form-toggle {
+                display: flex;
+                justify-content: center;
+                padding: 8px 15px 0;
+                background: white;
+            }
+            .search-form-toggle button {
+                background: none;
+                border: 1px solid #ddd;
+                border-radius: 20px;
+                padding: 6px 16px;
+                font-family: inherit;
+                font-size: 0.8rem;
+                color: var(--text-light);
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .search-form-toggle button:hover {
+                border-color: var(--primary-color);
+                color: var(--primary-color);
+            }
+            .search-form-toggle button.active {
+                background: var(--primary-color);
+                color: white;
+                border-color: var(--primary-color);
+            }
+            .search-form {
+                display: none;
+                padding: 12px 15px;
+                background: white;
+                border-top: 1px solid #eee;
+                overflow-y: auto;
+                max-height: 50vh;
+            }
+            .search-form.visible {
+                display: block;
+                animation: fadeIn 0.2s ease-in-out;
+            }
+            .form-row {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            .form-group {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            .form-group label {
+                font-size: 0.75rem;
+                color: var(--text-light);
+                margin-bottom: 3px;
+                font-weight: 500;
+            }
+            .form-group select,
+            .form-group input {
+                padding: 8px 10px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-family: inherit;
+                font-size: 0.85rem;
+                background: #fafafa;
+                outline: none;
+            }
+            .form-group select:focus,
+            .form-group input:focus {
+                border-color: var(--primary-color);
+                background: white;
+            }
+            .form-checkboxes {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .form-checkboxes label {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 0.8rem;
+                color: var(--text-main);
+                cursor: pointer;
+            }
+            .form-checkboxes input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                accent-color: var(--primary-color);
+            }
+            .form-submit {
+                width: 100%;
+                padding: 10px;
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-family: inherit;
+                font-size: 0.95rem;
+                font-weight: bold;
+                cursor: pointer;
+                margin-top: 10px;
+                transition: background 0.2s;
+            }
+            .form-submit:hover {
+                background: #8a1f1f;
+            }
+
+            .input-area {
+                display: flex;
+                padding: 15px;
+                background-color: white;
+                border-top: 1px solid #eee;
+                gap: 10px;
+            }
+            input[type="text"] {
+                flex-grow: 1;
+                padding: 12px 15px;
+                border: 1px solid #ddd;
+                border-radius: 25px;
+                font-family: inherit;
+                font-size: 0.95rem;
+                outline: none;
+            }
+            input[type="text"]:focus {
+                border-color: var(--primary-color);
+            }
+            button.send-btn {
+                padding: 10px 25px;
+                border: none;
+                border-radius: 25px;
+                background-color: var(--primary-color);
+                color: white;
+                font-family: inherit;
+                font-size: 1rem;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            button.send-btn:hover {
+                background-color: #8a1f1f;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            @keyframes pulse {
+                0% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+            ::-webkit-scrollbar {
+                width: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                جستجوی هوشمند املاک گرگان
+                <div id="liveBadge" class="live-badge">🔴 LIVE</div>
+            </div>
+            <div id="chat">
+                <!-- Live browser view -->
+                <div id="browserPanel" class="browser-panel">
+                    <div class="browser-toolbar">
+                        <span class="browser-dot red"></span>
+                        <span class="browser-dot yellow"></span>
+                        <span class="browser-dot green"></span>
+                        <div id="browserUrl" class="browser-url-bar">divar.ir</div>
+                    </div>
+                    <div class="browser-viewport">
+                        <div id="browserLoading" class="browser-loading">⏳ در حال مشاهده زنده مرورگر...</div>
+                        <img id="browserShot" src="" alt="Live view">
+                        <div id="browserLabel" class="browser-preview-label">🌐 نمای زنده</div>
+                    </div>
                 </div>
-                <div class="browser-viewport">
-                    <div id="browserLoading" class="browser-loading">⏳ در حال مشاهده زنده مرورگر...</div>
-                    <img id="browserShot" src="" alt="Live view">
-                    <div id="browserLabel" class="browser-preview-label">🌐 نمای زنده</div>
+
+                <!-- Live status panel -->
+                <div id="statusPanel" class="status-panel">
+                    <div class="status-panel-title">⚡ وضعیت عملیات</div>
+                    <div class="status-steps">
+                        <div id="step-ai" class="status-step hidden">
+                            <div class="step-dot"></div>
+                            <div class="step-text"></div>
+                            <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                        </div>
+                        <div id="step-browser" class="status-step hidden">
+                            <div class="step-dot"></div>
+                            <div class="step-text"></div>
+                            <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                        </div>
+                        <div id="step-navigate" class="status-step hidden">
+                            <div class="step-dot"></div>
+                            <div class="step-text"></div>
+                            <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                        </div>
+                        <div id="step-scroll" class="status-step hidden">
+                            <div class="step-dot"></div>
+                            <div class="step-text"></div>
+                            <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                        </div>
+                        <div id="step-extract" class="status-step hidden">
+                            <div class="step-dot"></div>
+                            <div class="step-text"></div>
+                            <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                        </div>
+                        <div id="step-monitor" class="status-step hidden">
+                            <div class="step-dot"></div>
+                            <div class="step-text"></div>
+                            <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Live status panel -->
-            <div id="statusPanel" class="status-panel">
-                <div class="status-panel-title">⚡ وضعیت عملیات</div>
-                <div class="status-steps">
-                    <div id="step-ai" class="status-step hidden">
-                        <div class="step-dot"></div>
-                        <div class="step-text"></div>
-                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+            <!-- Toggle buttons -->
+            <div class="search-form-toggle">
+                <button id="formToggleBtn" onclick="toggleForm()">📋 فرم جستجو</button>
+                <button id="chatToggleBtn" onclick="toggleChat()" style="margin-right:4px">💬 جستجوی متنی</button>
+            </div>
+
+            <!-- Structured Search Form -->
+            <div id="searchForm" class="search-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>شهر</label>
+                        <select id="f-city">
+                            <option value="gorgan">گرگان</option>
+                            <option value="tehran">تهران</option>
+                            <option value="shiraz">شیراز</option>
+                            <option value="isfahan">اصفهان</option>
+                            <option value="mashhad">مشهد</option>
+                            <option value="tabriz">تبریز</option>
+                            <option value="ahvaz">اهواز</option>
+                            <option value="rasht">رشت</option>
+                            <option value="karaj">کرج</option>
+                            <option value="kish">کیش</option>
+                        </select>
                     </div>
-                    <div id="step-browser" class="status-step hidden">
-                        <div class="step-dot"></div>
-                        <div class="step-text"></div>
-                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    <div class="form-group">
+                        <label>نوع ملک</label>
+                        <select id="f-type" onchange="updateCategory()">
+                            <option value="apartment">آپارتمان</option>
+                            <option value="villa">ویلا</option>
+                            <option value="house">خانه ویلایی</option>
+                            <option value="land">زمین</option>
+                            <option value="office">اداری</option>
+                            <option value="store">مغازه</option>
+                        </select>
                     </div>
-                    <div id="step-navigate" class="status-step hidden">
-                        <div class="step-dot"></div>
-                        <div class="step-text"></div>
-                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
-                    </div>
-                    <div id="step-scroll" class="status-step hidden">
-                        <div class="step-dot"></div>
-                        <div class="step-text"></div>
-                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
-                    </div>
-                    <div id="step-extract" class="status-step hidden">
-                        <div class="step-dot"></div>
-                        <div class="step-text"></div>
-                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
-                    </div>
-                    <div id="step-monitor" class="status-step hidden">
-                        <div class="step-dot"></div>
-                        <div class="step-text"></div>
-                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    <div class="form-group">
+                        <label>وضعیت</label>
+                        <select id="f-category">
+                            <option value="buy-apartment">فروش</option>
+                            <option value="rent-apartment">اجاره</option>
+                        </select>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>محله</label>
+                        <input type="text" id="f-query" placeholder="مثلاً: جانبازان، ناهارخوران">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>حداقل متراژ (متر)</label>
+                        <input type="number" id="f-size-min" placeholder="مثلاً: 110">
+                    </div>
+                    <div class="form-group">
+                        <label>حداکثر متراژ (متر)</label>
+                        <input type="number" id="f-size-max" placeholder="مثلاً: 130">
+                    </div>
+                    <div class="form-group">
+                        <label>خواب</label>
+                        <select id="f-rooms">
+                            <option value="">هر</option>
+                            <option value="0">بدون خواب</option>
+                            <option value="1">۱</option>
+                            <option value="2">۲</option>
+                            <option value="3">۳</option>
+                            <option value="4">۴</option>
+                            <option value="5">۵+</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" id="priceRow">
+                    <div class="form-group">
+                        <label>حداقل قیمت (تومان)</label>
+                        <input type="number" id="f-price-min" placeholder="مثلاً: 3000000000">
+                    </div>
+                    <div class="form-group">
+                        <label>حداکثر قیمت (تومان)</label>
+                        <input type="number" id="f-price-max" placeholder="مثلاً: 5000000000">
+                    </div>
+                </div>
+                <div class="form-row" id="rentRow" style="display:none">
+                    <div class="form-group">
+                        <label>حداقل اجاره (تومان)</label>
+                        <input type="number" id="f-rent-min" placeholder="مثلاً: 3000000">
+                    </div>
+                    <div class="form-group">
+                        <label>حداکثر اجاره (تومان)</label>
+                        <input type="number" id="f-rent-max" placeholder="مثلاً: 5000000">
+                    </div>
+                    <div class="form-group">
+                        <label>حداکثر رهن (تومان)</label>
+                        <input type="number" id="f-credit-max" placeholder="مثلاً: 200000000">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>امکانات</label>
+                        <div class="form-checkboxes">
+                            <label><input type="checkbox" id="f-elevator"> آسانسور</label>
+                            <label><input type="checkbox" id="f-parking"> پارکینگ</label>
+                            <label><input type="checkbox" id="f-warehouse"> انباری</label>
+                        </div>
+                    </div>
+                </div>
+                <button class="form-submit" onclick="sendFormSearch()">🔍 جستجو</button>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="queryInput" placeholder="چه خانه‌ای مد نظرتان است؟">
+                <button class="send-btn" onclick="sendMessage()">ارسال</button>
             </div>
         </div>
-        <div class="input-area">
-            <input type="text" id="queryInput" placeholder="چه خانه‌ای مد نظرتان است؟">
-            <button class="send-btn" onclick="sendMessage()">ارسال</button>
-        </div>
-    </div>
 
-    <script>
-        const chat = document.getElementById('chat');
-        const liveBadge = document.getElementById('liveBadge');
-        const statusPanel = document.getElementById('statusPanel');
-        const ws = new WebSocket('ws://localhost:8080');
-        
-        let currentBotBubble = null;
-        const stepOrder = ['ai', 'browser', 'navigate', 'scroll', 'extract', 'monitor'];
+        <script>
+            const chat = document.getElementById("chat");
+            const liveBadge = document.getElementById("liveBadge");
+            const statusPanel = document.getElementById("statusPanel");
+            const ws = new WebSocket("ws://localhost:8080");
 
-        ws.onopen = () => {
-            addMessage('bot', 'سلام! چه ملکی در گرگان نیاز دارید؟ به من بگویید تا گوش به زنگ دیوار شوم!');
-        };
+            let currentBotBubble = null;
+            const stepOrder = ["ai", "browser", "navigate", "scroll", "extract", "monitor"];
 
-        ws.onmessage = (event) => {
-            const response = JSON.parse(event.data);
-            
-            if (response.type === 'screenshot') {
-                handleScreenshot(response);
-            } else if (response.type === 'status') {
-                handleStatus(response);
-            } else if (response.type === 'info' || response.type === 'error') {
-                addMessage('bot', response.message);
-                if (response.message.includes("مانیتورینگ")) {
-                    liveBadge.style.display = 'block';
-                }
-            } else if (response.type === 'results') {
-                hideStatusPanel();
-                
-                if (response.isNewSearch || !currentBotBubble) {
-                    currentBotBubble = createBubble('bot');
-                    let title = document.createElement('div');
-                    title.style.fontWeight = 'bold';
-                    title.style.marginBottom = '10px';
-                    title.innerText = `نتایج یافت شده:`;
-                    currentBotBubble.appendChild(title);
-                    chat.appendChild(currentBotBubble);
-                }
-                
-                const oldBtn = currentBotBubble.querySelector('.load-more-btn');
-                if (oldBtn) oldBtn.remove();
-                
-                const fragment = document.createDocumentFragment();
-                response.data.forEach(ad => {
-                    const card = document.createElement('div');
-                    card.className = 'result-card';
-                    card.innerHTML = `<a href="${ad.link}" target="_blank">${ad.title}</a><div class="result-details">${ad.details}</div>`;
-                    fragment.appendChild(card);
-                });
-                currentBotBubble.appendChild(fragment);
+            ws.onopen = () => {
+                addMessage(
+                    "bot",
+                    "سلام! چه ملکی در گرگان نیاز دارید؟ به من بگویید تا گوش به زنگ دیوار شوم!",
+                );
+            };
 
-                const btn = document.createElement('button');
-                btn.className = 'load-more-btn';
-                btn.innerText = `🔄 اسکرول و نمایش آگهی‌های بیشتر`;
-                btn.onclick = function() {
-                    this.innerText = 'در حال اسکرول دیوار...';
-                    this.disabled = true;
-                    ws.send(JSON.stringify({ action: 'load_more' }));
-                };
-                currentBotBubble.appendChild(btn);
+            ws.onmessage = (event) => {
+                const response = JSON.parse(event.data);
 
-                setTimeout(() => { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-            
-            } else if (response.type === 'notification') {
-                const notifBubble = createBubble('msg notif');
-                notifBubble.innerHTML = `<div class="notif-header">🔔 آگهی‌های جدید همین الان ثبت شد!</div>`;
-                
-                response.data.forEach(ad => {
-                    notifBubble.innerHTML += `
+                if (response.type === "screenshot") {
+                    handleScreenshot(response);
+                } else if (response.type === "status") {
+                    handleStatus(response);
+                } else if (response.type === "info" || response.type === "error") {
+                    addMessage("bot", response.message);
+                    if (response.message.includes("مانیتورینگ")) {
+                        liveBadge.style.display = "block";
+                    }
+                } else if (response.type === "results") {
+                    hideStatusPanel();
+
+                    if (response.isNewSearch || !currentBotBubble) {
+                        currentBotBubble = createBubble("bot");
+                        let title = document.createElement("div");
+                        title.style.fontWeight = "bold";
+                        title.style.marginBottom = "10px";
+                        title.innerText = `نتایج یافت شده:`;
+                        currentBotBubble.appendChild(title);
+                        chat.appendChild(currentBotBubble);
+                    }
+
+                    const oldBtn = currentBotBubble.querySelector(".load-more-btn");
+                    if (oldBtn) oldBtn.remove();
+
+                    const fragment = document.createDocumentFragment();
+                    response.data.forEach((ad) => {
+                        const card = document.createElement("div");
+                        card.className = "result-card";
+                        card.innerHTML = `<a href="${ad.link}" target="_blank">${ad.title}</a><div class="result-details">${ad.details}</div>`;
+                        fragment.appendChild(card);
+                    });
+                    currentBotBubble.appendChild(fragment);
+
+                    const btn = document.createElement("button");
+                    btn.className = "load-more-btn";
+                    btn.innerText = `🔄 اسکرول و نمایش آگهی‌های بیشتر`;
+                    btn.onclick = function () {
+                        this.innerText = "در حال اسکرول دیوار...";
+                        this.disabled = true;
+                        ws.send(JSON.stringify({ action: "load_more" }));
+                    };
+                    currentBotBubble.appendChild(btn);
+
+                    setTimeout(() => {
+                        chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+                    }, 100);
+                } else if (response.type === "notification") {
+                    const notifBubble = createBubble("msg notif");
+                    notifBubble.innerHTML = `<div class="notif-header">🔔 آگهی‌های جدید همین الان ثبت شد!</div>`;
+
+                    response.data.forEach((ad) => {
+                        notifBubble.innerHTML += `
                         <div class="result-card" style="border-color: var(--notif-color);">
                             <a href="${ad.link}" target="_blank" style="color: var(--notif-color);">${ad.title}</a>
                             <div class="result-details">${ad.details}</div>
                         </div>
                     `;
-                });
-                
-                chat.appendChild(notifBubble);
-                setTimeout(() => { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-                
-                try {
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioCtx.createOscillator();
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    oscillator.connect(audioCtx.destination);
-                    oscillator.start();
-                    oscillator.stop(audioCtx.currentTime + 0.1);
-                } catch(e) {}
-            }
-        };
+                    });
 
-        // Handle live screenshot stream
-        function handleScreenshot(shot) {
-            const panel = document.getElementById('browserPanel');
-            const img = document.getElementById('browserShot');
-            const urlBar = document.getElementById('browserUrl');
-            const label = document.getElementById('browserLabel');
-            const loading = document.getElementById('browserLoading');
+                    chat.appendChild(notifBubble);
+                    setTimeout(() => {
+                        chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+                    }, 100);
 
-            panel.classList.add('visible');
+                    try {
+                        const audioCtx = new (
+                            window.AudioContext || window.webkitAudioContext
+                        )();
+                        const oscillator = audioCtx.createOscillator();
+                        oscillator.type = "sine";
+                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                        oscillator.connect(audioCtx.destination);
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.1);
+                    } catch (e) {}
+                }
+            };
 
-            // Hide loading overlay
-            loading.classList.add('hidden');
+            // Handle live screenshot stream
+            function handleScreenshot(shot) {
+                const panel = document.getElementById("browserPanel");
+                const img = document.getElementById("browserShot");
+                const urlBar = document.getElementById("browserUrl");
+                const label = document.getElementById("browserLabel");
+                const loading = document.getElementById("browserLoading");
 
-            // Update URL bar and label
-            urlBar.textContent = shot.url || 'divar.ir';
-            if (shot.label) {
-                label.textContent = '🌐 ' + shot.label;
-                label.style.display = 'block';
-            }
+                panel.classList.add("visible");
 
-            // Show the screenshot
-            img.src = 'data:image/jpeg;base64,' + shot.image;
+                // Hide loading overlay
+                loading.classList.add("hidden");
 
-            // Auto-scroll into view when first screenshot arrives
-            if (!panel.dataset.scrolled) {
-                setTimeout(() => { chat.scrollTo({ top: 0, behavior: 'smooth' }); }, 100);
-                panel.dataset.scrolled = '1';
-            }
-        }
+                // Update URL bar and label
+                urlBar.textContent = shot.url || "divar.ir";
+                if (shot.label) {
+                    label.textContent = "🌐 " + shot.label;
+                    label.style.display = "block";
+                }
 
-        // Handle live status updates
-        function handleStatus(status) {
-            statusPanel.classList.add('visible');
-            const el = document.getElementById('step-' + status.step);
-            if (!el) return;
+                // Show the screenshot
+                img.src = "data:image/jpeg;base64," + shot.image;
 
-            // Remove hidden, set class
-            el.classList.remove('hidden');
-            el.className = 'status-step ' + status.status;
-
-            // Update text
-            el.querySelector('.step-text').textContent = status.message;
-
-            // Update progress bar
-            if (status.progress !== null && status.progress !== undefined) {
-                const bar = el.querySelector('.step-progress-bar');
-                bar.style.width = status.progress + '%';
+                // Auto-scroll into view when first screenshot arrives
+                if (!panel.dataset.scrolled) {
+                    setTimeout(() => {
+                        chat.scrollTo({ top: 0, behavior: "smooth" });
+                    }, 100);
+                    panel.dataset.scrolled = "1";
+                }
             }
 
-            // Mark earlier steps as done if this one is running
-            const currentIdx = stepOrder.indexOf(status.step);
-            stepOrder.forEach((s, i) => {
-                if (i < currentIdx) {
-                    const prev = document.getElementById('step-' + s);
-                    if (prev && !prev.classList.contains('hidden')) {
-                        prev.classList.remove('running', 'info');
-                        prev.classList.add('done');
+            // Handle live status updates
+            function handleStatus(status) {
+                statusPanel.classList.add("visible");
+                const el = document.getElementById("step-" + status.step);
+                if (!el) return;
+
+                // Remove hidden, set class
+                el.classList.remove("hidden");
+                el.className = "status-step " + status.status;
+
+                // Update text
+                el.querySelector(".step-text").textContent = status.message;
+
+                // Update progress bar
+                if (status.progress !== null && status.progress !== undefined) {
+                    const bar = el.querySelector(".step-progress-bar");
+                    bar.style.width = status.progress + "%";
+                }
+
+                // Mark earlier steps as done if this one is running
+                const currentIdx = stepOrder.indexOf(status.step);
+                stepOrder.forEach((s, i) => {
+                    if (i < currentIdx) {
+                        const prev = document.getElementById("step-" + s);
+                        if (prev && !prev.classList.contains("hidden")) {
+                            prev.classList.remove("running", "info");
+                            prev.classList.add("done");
+                        }
                     }
+                });
+
+                // If done or error, scroll down
+                if (status.status === "done" || status.status === "error") {
+                    setTimeout(() => {
+                        chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+                    }, 100);
+                }
+            }
+
+            function hideStatusPanel() {
+                // Mark all steps as done before hiding
+                stepOrder.forEach((s) => {
+                    const el = document.getElementById("step-" + s);
+                    if (el && !el.classList.contains("hidden")) {
+                        el.classList.remove("running", "info");
+                        el.classList.add("done");
+                    }
+                });
+                setTimeout(() => {
+                    statusPanel.classList.remove("visible");
+                    stepOrder.forEach((s) => {
+                        const el = document.getElementById("step-" + s);
+                        if (el) {
+                            el.classList.add("hidden");
+                            el.classList.remove("done", "running", "error", "info");
+                            el.querySelector(".step-text").textContent = "";
+                            el.querySelector(".step-progress-bar").style.width = "0%";
+                        }
+                    });
+                }, 1500);
+            }
+
+            function sendMessage() {
+                const input = document.getElementById("queryInput");
+                const query = input.value.trim();
+                if (query) {
+                    addMessage("user", query);
+                    ws.send(JSON.stringify({ text: query }));
+                    input.value = "";
+                }
+            }
+
+            // Form mode
+            let formMode = true;
+
+            function toggleForm() {
+                formMode = true;
+                document.getElementById("searchForm").classList.add("visible");
+                document.getElementById("formToggleBtn").classList.add("active");
+                document.getElementById("chatToggleBtn").classList.remove("active");
+                document.querySelector(".input-area").style.display = "none";
+            }
+
+            function toggleChat() {
+                formMode = false;
+                document.getElementById("searchForm").classList.remove("visible");
+                document.getElementById("formToggleBtn").classList.remove("active");
+                document.getElementById("chatToggleBtn").classList.add("active");
+                document.querySelector(".input-area").style.display = "flex";
+            }
+
+            function updateCategory() {
+                const type = document.getElementById("f-type").value;
+                const catSelect = document.getElementById("f-category");
+                const priceRow = document.getElementById("priceRow");
+                const rentRow = document.getElementById("rentRow");
+
+                // Map type to default category
+                const buyMap = {
+                    apartment: "buy-apartment",
+                    villa: "buy-villa",
+                    house: "buy-residential",
+                    land: "buy-residential",
+                    office: "buy-office",
+                    store: "buy-store",
+                };
+                const rentMap = {
+                    apartment: "rent-apartment",
+                    villa: "rent-villa",
+                    house: "rent-residential",
+                    land: "rent-residential",
+                    office: "rent-office",
+                    store: "rent-store",
+                };
+
+                const currentVal = catSelect.value;
+                const isBuy = currentVal.startsWith("buy");
+                catSelect.innerHTML = isBuy
+                    ? `<option value="${buyMap[type]}">فروش</option><option value="${rentMap[type]}">اجاره</option>`
+                    : `<option value="${rentMap[type]}">اجاره</option><option value="${buyMap[type]}">فروش</option>`;
+
+                // Show/hide price vs rent fields
+                if (catSelect.value.startsWith("rent")) {
+                    priceRow.style.display = "none";
+                    rentRow.style.display = "flex";
+                } else {
+                    priceRow.style.display = "flex";
+                    rentRow.style.display = "none";
+                }
+            }
+
+            document.getElementById("f-category").addEventListener("change", function () {
+                if (this.value.startsWith("rent")) {
+                    document.getElementById("priceRow").style.display = "none";
+                    document.getElementById("rentRow").style.display = "flex";
+                } else {
+                    document.getElementById("priceRow").style.display = "flex";
+                    document.getElementById("rentRow").style.display = "none";
                 }
             });
 
-            // If done or error, scroll down
-            if (status.status === 'done' || status.status === 'error') {
-                setTimeout(() => { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-            }
-        }
+            function sendFormSearch() {
+                const data = {
+                    action: "structured_search",
+                    city: document.getElementById("f-city").value,
+                    type: document.getElementById("f-type").value,
+                    category: document.getElementById("f-category").value,
+                    query: document.getElementById("f-query").value.trim() || null,
+                    size_min: parseInt(document.getElementById("f-size-min").value) || null,
+                    size_max: parseInt(document.getElementById("f-size-max").value) || null,
+                    rooms: document.getElementById("f-rooms").value || null,
+                    price_min:
+                        parseInt(document.getElementById("f-price-min").value) || null,
+                    price_max:
+                        parseInt(document.getElementById("f-price-max").value) || null,
+                    rent_min: parseInt(document.getElementById("f-rent-min").value) || null,
+                    rent_max: parseInt(document.getElementById("f-rent-max").value) || null,
+                    credit_max:
+                        parseInt(document.getElementById("f-credit-max").value) || null,
+                    elevator: document.getElementById("f-elevator").checked || null,
+                    parking: document.getElementById("f-parking").checked || null,
+                    warehouse: document.getElementById("f-warehouse").checked || null,
+                };
 
-        function hideStatusPanel() {
-            // Mark all steps as done before hiding
-            stepOrder.forEach(s => {
-                const el = document.getElementById('step-' + s);
-                if (el && !el.classList.contains('hidden')) {
-                    el.classList.remove('running', 'info');
-                    el.classList.add('done');
+                // Build summary message
+                const city = document.getElementById("f-city").selectedOptions[0].text;
+                const type = document.getElementById("f-type").selectedOptions[0].text;
+                const cat = document.getElementById("f-category").selectedOptions[0].text;
+                let summary = `${type} ${cat} در ${city}`;
+                if (data.query) summary += ` — ${data.query}`;
+                if (data.size_min || data.size_max) {
+                    summary += ` — ${data.size_min || "؟"} تا ${data.size_max || "؟"} متر`;
                 }
-            });
-            setTimeout(() => {
-                statusPanel.classList.remove('visible');
-                stepOrder.forEach(s => {
-                    const el = document.getElementById('step-' + s);
-                    if (el) {
-                        el.classList.add('hidden');
-                        el.classList.remove('done', 'running', 'error', 'info');
-                        el.querySelector('.step-text').textContent = '';
-                        el.querySelector('.step-progress-bar').style.width = '0%';
-                    }
-                });
-            }, 1500);
-        }
+                if (data.rooms) summary += ` — ${data.rooms} خواب`;
 
-        function sendMessage() {
-            const input = document.getElementById('queryInput');
-            const query = input.value.trim();
-            if (query) {
-                addMessage('user', query);
-                ws.send(JSON.stringify({ text: query }));
-                input.value = '';
+                addMessage("user", summary);
+                ws.send(JSON.stringify(data));
             }
-        }
-        
-        document.getElementById('queryInput').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') sendMessage();
-        });
 
-        function createBubble(className) {
-            const div = document.createElement('div');
-            div.className = className.includes('msg') ? className : 'msg ' + className;
-            return div;
-        }
+            document
+                .getElementById("queryInput")
+                .addEventListener("keypress", function (e) {
+                    if (e.key === "Enter") sendMessage();
+                });
 
-        function addMessage(sender, text) {
-            const div = createBubble(sender);
-            div.innerText = text;
-            chat.appendChild(div);
-            chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
-        }
-    </script>
-</body>
+            function createBubble(className) {
+                const div = document.createElement("div");
+                div.className = className.includes("msg") ? className : "msg " + className;
+                return div;
+            }
+
+            function addMessage(sender, text) {
+                const div = createBubble(sender);
+                div.innerText = text;
+                chat.appendChild(div);
+                chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+            }
+        </script>
+    </body>
 </html>

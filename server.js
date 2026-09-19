@@ -1,5 +1,7 @@
 require("dotenv").config();
 const WebSocket = require("ws");
+const { parseSearchPrompt } = require("./search_parser");
+const { buildDivarRequest, applyPostFilters } = require("./divar_adapter");
 const scraper = require("./scrape_divar_ads");
 
 const PORT = 8080;
@@ -12,30 +14,25 @@ console.log(`WebSocket server is running on ws://localhost:${PORT}`);
 const shared = {
   seenAds: new Set(),
   monitor: null,
-  lastFilters: {},
+  lastSearch: null,
+  lastPostFilters: null,
   busy: false,
   adCount: 0,
 };
 
 wss.on("connection", async (ws) => {
   console.log(`New client connected! (${wss.clients.size} total)`);
-
   try {
-    const page = await scraper.ensureBrowser().then((b) => b.page);
+    const { page } = await scraper.ensureBrowser();
     if (page && !page.isClosed()) {
-      broadcastStatus(
-        "browser",
-        "done",
-        "مرورگر در حال کار است — نمای زنده نمایش داده میشود",
-      );
+      broadcastStatus("browser", "done", "مرورگر در حال کار است");
       await sendScreenshotToClient(ws, "نمای فعلی مرورگر");
     } else {
       broadcastStatus("browser", "info", "در انتظار اولین درخواست جستجو...");
     }
-  } catch (e) {
+  } catch {
     broadcastStatus("browser", "info", "در انتظار اولین درخواست جستجو...");
   }
-
   ws.on("message", (message) => handleMessage(ws, message));
   ws.on("close", () =>
     console.log(`Client disconnected. (${wss.clients.size} left)`),
@@ -45,24 +42,172 @@ wss.on("connection", async (ws) => {
 async function handleMessage(ws, message) {
   try {
     const data = JSON.parse(message.toString());
-
     if (data.action === "load_more") {
-      if (shared.busy) return sendInfo(ws, "صبر کنید — در حال انجام عملیات هستم...");
+      if (shared.busy) return sendInfo(ws, "صبر کنید...");
       await handleLoadMore(ws);
       return;
     }
-
+    if (data.action === "structured_search") {
+      if (shared.busy) return sendInfo(ws, "صبر کنید...");
+      await handleStructuredSearch(ws, data);
+      return;
+    }
     if (data.text) {
-      if (shared.busy) return sendInfo(ws, "صبر کنید — در حال انجام عملیات هستم...");
-      await handleSearch(ws, data);
+      if (shared.busy) return sendInfo(ws, "صبر کنید...");
+      await handleSearch(ws, data.text);
     }
   } catch (error) {
     console.error("Message handling error:", error.message);
   }
 }
 
+/**
+ * Structured search: user fills form, data goes straight to Divar (no AI parsing).
+ */
+async function handleStructuredSearch(ws, formData) {
+  shared.busy = true;
+  shared.seenAds.clear();
+
+  try {
+    // Build search object directly from form data — no AI needed
+    const search = {
+      city: formData.city || "gorgan",
+      category: formData.category || "buy-apartment",
+      type: formData.type || null,
+      rooms: formData.rooms || null,
+      size_min: formData.size_min || null,
+      size_max: formData.size_max || null,
+      price_min: formData.price_min || null,
+      price_max: formData.price_max || null,
+      rent_min: formData.rent_min || null,
+      rent_max: formData.rent_max || null,
+      credit_min: formData.credit_min || null,
+      credit_max: formData.credit_max || null,
+      elevator: formData.elevator || null,
+      parking: formData.parking || null,
+      warehouse: formData.warehouse || null,
+      query: formData.query || null,
+    };
+    shared.lastSearch = search;
+    console.log(
+      "[Pipeline] Structured search:",
+      JSON.stringify(search, null, 2),
+    );
+
+    // Build Divar URL directly — skip AI parse step
+    const { url, postFilters } = buildDivarRequest(search);
+    shared.lastPostFilters = postFilters;
+    broadcastStatus("adapt", "done", "آدرس ساخته شد");
+    console.log("[Pipeline] URL:", url);
+
+    // Navigate
+    broadcastStatus("navigate", "running", "باز کردن صفحه دیوار...");
+    const page = await scraper.navigateToSearch(url);
+    broadcastStatus("navigate", "done", "صفحه دیوار بارگذاری شد");
+    await sendScreenshot("صفحه بارگذاری شد");
+
+    // Scroll
+    broadcastStatus("scroll", "running", "در حال اسکرول...");
+    await scraper.scrollToLoadAds(page, {
+      onProgress: ({ round, maxRounds, cardsVisible }) => {
+        const progress = Math.round((round / maxRounds) * 100);
+        broadcastStatus(
+          "scroll",
+          "running",
+          `${cardsVisible} کارت قابل مشاهده`,
+          progress,
+        );
+      },
+    });
+
+    // Collect + normalize + dedupe + post-filter
+    broadcastStatus("collect", "running", "جمع‌آوری آگهیها...");
+    let ads = await scraper.collectAds(page);
+    console.log(`[Pipeline] Before post-filter: ${ads.length} ads`);
+    ads = applyPostFilters(ads, postFilters);
+    console.log(`[Pipeline] After post-filter: ${ads.length} ads`);
+
+    shared.adCount = ads.length;
+    broadcastStatus("collect", "done", `${ads.length} آگهی یافت شد`);
+    ws.send(JSON.stringify({ type: "results", data: ads, isNewSearch: true }));
+    ws.send(JSON.stringify({ type: "ad-count", count: ads.length }));
+
+    startMonitoring();
+  } catch (error) {
+    console.error("[Pipeline] Error:", error.message);
+    sendInfo(ws, `خطا: ${error.message}`);
+    broadcastStatus("error", "error", `خطا: ${error.message}`);
+  } finally {
+    shared.busy = false;
+  }
+}
+
+async function handleSearch(ws, userPrompt) {
+  shared.busy = true;
+  shared.seenAds.clear();
+
+  try {
+    // Step 1: Parse user prompt
+    broadcastStatus("parse", "running", "تحلیل درخواست...");
+    sendInfo(ws, "در حال تحلیل درخواست شما...");
+    const search = await parseSearchPrompt(userPrompt);
+    shared.lastSearch = search;
+    broadcastStatus("parse", "done", "درخواست تحلیل شد");
+    console.log("[Pipeline] Parsed:", JSON.stringify(search, null, 2));
+
+    // Step 2: Build Divar URL
+    const { url, postFilters } = buildDivarRequest(search);
+    shared.lastPostFilters = postFilters;
+    broadcastStatus("adapt", "done", "آدرس ساخته شد");
+    console.log("[Pipeline] URL:", url);
+    console.log("[Pipeline] Post-filters:", JSON.stringify(postFilters));
+
+    // Step 3: Navigate
+    broadcastStatus("navigate", "running", "باز کردن صفحه دیوار...");
+    const page = await scraper.navigateToSearch(url);
+    broadcastStatus("navigate", "done", "صفحه دیوار بارگذاری شد");
+    await sendScreenshot("صفحه بارگذاری شد");
+
+    // Step 4: Scroll
+    broadcastStatus("scroll", "running", "در حال اسکرول...");
+    await scraper.scrollToLoadAds(page, {
+      onProgress: ({ round, maxRounds, cardsVisible }) => {
+        const progress = Math.round((round / maxRounds) * 100);
+        broadcastStatus(
+          "scroll",
+          "running",
+          `${cardsVisible} کارت قابل مشاهده`,
+          progress,
+        );
+      },
+    });
+
+    // Step 5: Collect + normalize + dedupe
+    broadcastStatus("collect", "running", "جمع‌آوری آگهیها...");
+    let ads = await scraper.collectAds(page);
+    console.log(`[Pipeline] Before post-filter: ${ads.length} ads`);
+
+    // Step 6: Post-filter for extra precision
+    ads = applyPostFilters(ads, postFilters);
+    console.log(`[Pipeline] After post-filter: ${ads.length} ads`);
+
+    shared.adCount = ads.length;
+    broadcastStatus("collect", "done", `${ads.length} آگهی دقیق یافت شد`);
+    ws.send(JSON.stringify({ type: "results", data: ads, isNewSearch: true }));
+    ws.send(JSON.stringify({ type: "ad-count", count: ads.length }));
+
+    startMonitoring();
+  } catch (error) {
+    console.error("[Pipeline] Error:", error.message);
+    sendInfo(ws, `خطا: ${error.message}`);
+    broadcastStatus("error", "error", `خطا: ${error.message}`);
+  } finally {
+    shared.busy = false;
+  }
+}
+
 async function handleLoadMore(ws) {
-  const page = await scraper.ensureBrowser().then((b) => b.page);
+  const { page } = await scraper.ensureBrowser();
   if (!page) return sendInfo(ws, "اول یک جستجو انجام بدهید.");
 
   shared.busy = true;
@@ -82,9 +227,11 @@ async function handleLoadMore(ws) {
       },
     });
 
-    const allAds = await scraper.extractAds(page);
-    const newAds = allAds.filter((ad) => {
-      if (!shared.seenAds.has(ad.link) && ad.link !== "https://divar.ir#") {
+    let ads = await scraper.collectAds(page);
+    ads = applyPostFilters(ads, shared.lastPostFilters);
+
+    const newAds = ads.filter((ad) => {
+      if (!shared.seenAds.has(ad.link)) {
         shared.seenAds.add(ad.link);
         return true;
       }
@@ -98,64 +245,6 @@ async function handleLoadMore(ws) {
       broadcastStatus("scroll", "done", "آگهی جدیدی پیدا نشد");
       sendInfo(ws, "فعلا آگهی جدیدی یافت نشد.");
     }
-  } finally {
-    shared.busy = false;
-  }
-}
-
-async function handleSearch(ws, data) {
-  const filters = {
-    query: data.text,
-    price_min: data.price_min || shared.lastFilters.price_min || null,
-    price_max: data.price_max || shared.lastFilters.price_max || null,
-  };
-  shared.lastFilters = filters;
-
-  let filterInfo = `جستجو: "${filters.query}"`;
-  if (filters.price_min)
-    filterInfo += ` | از ${(filters.price_min / 1e9).toFixed(1)} میلیارد`;
-  if (filters.price_max)
-    filterInfo += ` | تا ${(filters.price_max / 1e9).toFixed(1)} میلیارد`;
-  sendInfo(ws, filterInfo);
-
-  shared.busy = true;
-  shared.seenAds.clear();
-
-  try {
-    broadcastStatus("navigate", "running", "در حال باز کردن صفحه دیوار...");
-    const page = await scraper.performSearch(filters);
-    broadcastStatus("navigate", "done", "صفحه دیوار بارگذاری شد");
-    await sendScreenshot("صفحه بارگذاری شد");
-
-    broadcastStatus("extract", "running", "در حال استخراج آگهیها...");
-    await scraper.scrollToLoadAds(page, {
-      onProgress: ({ round, maxRounds, cardsVisible }) => {
-        const progress = Math.round((round / maxRounds) * 100);
-        broadcastStatus(
-          "scroll",
-          "running",
-          `${cardsVisible} کارت قابل مشاهده`,
-          progress,
-        );
-      },
-    });
-
-    const ads = await scraper.extractAds(page);
-    const newAds = ads.filter((ad) => {
-      if (!shared.seenAds.has(ad.link) && ad.link !== "https://divar.ir#") {
-        shared.seenAds.add(ad.link);
-        return true;
-      }
-      return false;
-    });
-
-    shared.adCount = newAds.length;
-    broadcastStatus("extract", "done", `${newAds.length} آگهی استخراج شد`);
-    ws.send(
-      JSON.stringify({ type: "results", data: newAds, isNewSearch: true }),
-    );
-    ws.send(JSON.stringify({ type: "ad-count", count: newAds.length }));
-    startMonitoring();
   } finally {
     shared.busy = false;
   }
@@ -182,17 +271,8 @@ function broadcastStatus(step, status, message, progress = null) {
   }
 }
 
-function broadcastLog(kind, text) {
-  const payload = JSON.stringify({ type: "log", kind, text });
-  for (const client of wss.clients) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(payload);
-    }
-  }
-}
-
 async function sendScreenshot(label = "") {
-  const page = await scraper.ensureBrowser().then((b) => b.page);
+  const { page } = await scraper.ensureBrowser();
   if (!page) return;
   try {
     const buffer = await page.screenshot({
@@ -212,13 +292,13 @@ async function sendScreenshot(label = "") {
         client.send(payload);
       }
     }
-  } catch (e) {
-    // Screenshot can fail if page is navigating, ignore silently
+  } catch {
+    // ignore
   }
 }
 
 async function sendScreenshotToClient(ws, label = "") {
-  const page = await scraper.ensureBrowser().then((b) => b.page);
+  const { page } = await scraper.ensureBrowser();
   if (!page) return;
   try {
     const buffer = await page.screenshot({
@@ -235,7 +315,7 @@ async function sendScreenshotToClient(ws, label = "") {
         timestamp: Date.now(),
       }),
     );
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
@@ -244,25 +324,23 @@ function startMonitoring() {
   if (shared.monitor) clearInterval(shared.monitor);
 
   console.log("[Monitor] Started background checking every 30 seconds...");
-  broadcastStatus(
-    "monitor",
-    "running",
-    "مانیتورینگ فعال شد — بررسی هر ۳۰ ثانیه",
-  );
+  broadcastStatus("monitor", "running", "مانیتورینگ فعال — بررسی هر ۳۰ ثانیه");
 
   shared.monitor = setInterval(async () => {
     try {
-      console.log("[Monitor] Checking for new ads in background...");
+      console.log("[Monitor] Checking for new ads...");
       broadcastStatus("monitor", "info", "بررسی آگهیهای جدید...");
 
-      const page = await scraper.ensureBrowser().then((b) => b.page);
+      const { page } = await scraper.ensureBrowser();
       await page.reload({ waitUntil: "domcontentloaded" });
       await page.waitForTimeout(5000);
       await sendScreenshot("بررسی دورهای");
 
-      const allAds = await scraper.extractAds(page);
-      const newAds = allAds.filter((ad) => {
-        if (!shared.seenAds.has(ad.link) && ad.link !== "https://divar.ir#") {
+      let ads = await scraper.collectAds(page);
+      ads = applyPostFilters(ads, shared.lastPostFilters);
+
+      const newAds = ads.filter((ad) => {
+        if (!shared.seenAds.has(ad.link)) {
           shared.seenAds.add(ad.link);
           return true;
         }
@@ -270,9 +348,7 @@ function startMonitoring() {
       });
 
       if (newAds.length > 0) {
-        console.log(
-          `[Monitor] Found ${newAds.length} NEW ads! Sending notification...`,
-        );
+        console.log(`[Monitor] Found ${newAds.length} NEW ads!`);
         broadcastStatus(
           "monitor",
           "done",
@@ -284,15 +360,11 @@ function startMonitoring() {
           }
         }
       } else {
-        broadcastStatus(
-          "monitor",
-          "running",
-          "مانیتورینگ فعال — آگهی جدیدی نیست",
-        );
+        broadcastStatus("monitor", "running", "مانیتورینگ — آگهی جدیدی نیست");
       }
     } catch (error) {
-      console.error("[Monitor] Error during background check:", error.message);
-      broadcastStatus("monitor", "error", `خطا در بررسی: ${error.message}`);
+      console.error("[Monitor] Error:", error.message);
+      broadcastStatus("monitor", "error", `خطا: ${error.message}`);
     }
   }, MONITOR_INTERVAL_MS);
 }
