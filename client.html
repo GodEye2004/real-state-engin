@@ -6,13 +6,48 @@
     <title>جستجوی هوشمند دیوار</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
-        :root { --primary-color: #a62626; --bg-color: #f5f5f5; --chat-bg: #ffffff; --user-msg: #ffebee; --bot-msg: #f0f0f0; --text-main: #212121; --text-light: #757575; --notif-color: #2e7d32; }
+        :root { --primary-color: #a62626; --bg-color: #f5f5f5; --chat-bg: #ffffff; --user-msg: #ffebee; --bot-msg: #f0f0f0; --text-main: #212121; --text-light: #757575; --notif-color: #2e7d32; --status-running: #1976d2; --status-done: #2e7d32; --status-error: #c62828; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Vazirmatn', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; height: 100vh; }
         .container { width: 100%; max-width: 600px; background-color: var(--chat-bg); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); overflow: hidden; display: flex; flex-direction: column; height: 90vh; }
         .header { background-color: var(--primary-color); color: white; padding: 20px; text-align: center; font-size: 1.2rem; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; display: flex; justify-content: center; align-items: center; gap: 10px;}
         .live-badge { background-color: #ff5252; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; animation: pulse 2s infinite; display: none;}
         #chat { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background-color: #fbfbfb; scroll-behavior: smooth; }
+
+        /* Status panel */
+        .status-panel { display: none; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; margin-bottom: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .status-panel.visible { display: block; animation: fadeIn 0.3s ease-in-out; }
+        .status-panel-title { font-weight: bold; font-size: 0.85rem; color: var(--text-light); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .status-steps { display: flex; flex-direction: column; gap: 6px; }
+        .status-step { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; background: #f9f9f9; transition: all 0.3s; }
+        .status-step.running { background: #e3f2fd; }
+        .status-step.done { background: #e8f5e9; }
+        .status-step.error { background: #ffebee; }
+        .status-step.hidden { display: none; }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #ccc; }
+        .status-step.running .step-dot { background: var(--status-running); animation: pulse 1s infinite; }
+        .status-step.done .step-dot { background: var(--status-done); }
+        .status-step.error .step-dot { background: var(--status-error); }
+        .step-text { flex-grow: 1; }
+        .step-progress { width: 60px; height: 4px; background: #e0e0e0; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+        .step-progress-bar { height: 100%; background: var(--status-running); border-radius: 2px; transition: width 0.3s; }
+        .status-step.done .step-progress { display: none; }
+
+        /* Live browser view */
+        .browser-panel { display: none; background: #1e1e1e; border: 1px solid #333; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .browser-panel.visible { display: block; animation: fadeIn 0.3s ease-in-out; }
+        .browser-toolbar { background: #2d2d2d; padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #444; }
+        .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .browser-dot.red { background: #ff5f57; }
+        .browser-dot.yellow { background: #febc2e; }
+        .browser-dot.green { background: #28c840; }
+        .browser-url-bar { flex-grow: 1; background: #3a3a3a; color: #ccc; border-radius: 6px; padding: 4px 10px; font-size: 0.7rem; text-align: left; direction: ltr; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .browser-viewport { position: relative; line-height: 0; }
+        .browser-viewport img { width: 100%; display: block; }
+        .browser-preview-label { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; line-height: 1.4; z-index: 2; }
+        .browser-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #1e1e1e; color: #fff; font-size: 0.85rem; z-index: 3; }
+        .browser-loading.hidden { display: none; }
+
         .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s ease-in-out; }
         .user { align-self: flex-start; background-color: var(--user-msg); color: var(--primary-color); border-bottom-right-radius: 2px; }
         .bot { align-self: flex-end; background-color: var(--bot-msg); color: var(--text-main); border-bottom-left-radius: 2px; }
@@ -44,7 +79,59 @@
             جستجوی هوشمند املاک گرگان
             <div id="liveBadge" class="live-badge">🔴 LIVE</div>
         </div>
-        <div id="chat"></div>
+        <div id="chat">
+            <!-- Live browser view -->
+            <div id="browserPanel" class="browser-panel">
+                <div class="browser-toolbar">
+                    <span class="browser-dot red"></span>
+                    <span class="browser-dot yellow"></span>
+                    <span class="browser-dot green"></span>
+                    <div id="browserUrl" class="browser-url-bar">divar.ir</div>
+                </div>
+                <div class="browser-viewport">
+                    <div id="browserLoading" class="browser-loading">⏳ در حال مشاهده زنده مرورگر...</div>
+                    <img id="browserShot" src="" alt="Live view">
+                    <div id="browserLabel" class="browser-preview-label">🌐 نمای زنده</div>
+                </div>
+            </div>
+
+            <!-- Live status panel -->
+            <div id="statusPanel" class="status-panel">
+                <div class="status-panel-title">⚡ وضعیت عملیات</div>
+                <div class="status-steps">
+                    <div id="step-ai" class="status-step hidden">
+                        <div class="step-dot"></div>
+                        <div class="step-text"></div>
+                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    </div>
+                    <div id="step-browser" class="status-step hidden">
+                        <div class="step-dot"></div>
+                        <div class="step-text"></div>
+                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    </div>
+                    <div id="step-navigate" class="status-step hidden">
+                        <div class="step-dot"></div>
+                        <div class="step-text"></div>
+                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    </div>
+                    <div id="step-scroll" class="status-step hidden">
+                        <div class="step-dot"></div>
+                        <div class="step-text"></div>
+                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    </div>
+                    <div id="step-extract" class="status-step hidden">
+                        <div class="step-dot"></div>
+                        <div class="step-text"></div>
+                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    </div>
+                    <div id="step-monitor" class="status-step hidden">
+                        <div class="step-dot"></div>
+                        <div class="step-text"></div>
+                        <div class="step-progress"><div class="step-progress-bar" style="width:0%"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="input-area">
             <input type="text" id="queryInput" placeholder="چه خانه‌ای مد نظرتان است؟">
             <button class="send-btn" onclick="sendMessage()">ارسال</button>
@@ -54,9 +141,11 @@
     <script>
         const chat = document.getElementById('chat');
         const liveBadge = document.getElementById('liveBadge');
+        const statusPanel = document.getElementById('statusPanel');
         const ws = new WebSocket('ws://localhost:8080');
         
         let currentBotBubble = null;
+        const stepOrder = ['ai', 'browser', 'navigate', 'scroll', 'extract', 'monitor'];
 
         ws.onopen = () => {
             addMessage('bot', 'سلام! چه ملکی در گرگان نیاز دارید؟ به من بگویید تا گوش به زنگ دیوار شوم!');
@@ -65,12 +154,17 @@
         ws.onmessage = (event) => {
             const response = JSON.parse(event.data);
             
-            if (response.type === 'info' || response.type === 'error') {
+            if (response.type === 'screenshot') {
+                handleScreenshot(response);
+            } else if (response.type === 'status') {
+                handleStatus(response);
+            } else if (response.type === 'info' || response.type === 'error') {
                 addMessage('bot', response.message);
-                if(response.message.includes("مانیتورینگ")) {
-                    liveBadge.style.display = 'block'; // Turn on LIVE indicator
+                if (response.message.includes("مانیتورینگ")) {
+                    liveBadge.style.display = 'block';
                 }
             } else if (response.type === 'results') {
+                hideStatusPanel();
                 
                 if (response.isNewSearch || !currentBotBubble) {
                     currentBotBubble = createBubble('bot');
@@ -107,7 +201,6 @@
                 setTimeout(() => { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
             
             } else if (response.type === 'notification') {
-                // Background monitor found NEW items!
                 const notifBubble = createBubble('msg notif');
                 notifBubble.innerHTML = `<div class="notif-header">🔔 آگهی‌های جدید همین الان ثبت شد!</div>`;
                 
@@ -123,18 +216,107 @@
                 chat.appendChild(notifBubble);
                 setTimeout(() => { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
                 
-                // Play a simple beep sound if browser allows
                 try {
                     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     const oscillator = audioCtx.createOscillator();
                     oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
                     oscillator.connect(audioCtx.destination);
                     oscillator.start();
                     oscillator.stop(audioCtx.currentTime + 0.1);
                 } catch(e) {}
             }
         };
+
+        // Handle live screenshot stream
+        function handleScreenshot(shot) {
+            const panel = document.getElementById('browserPanel');
+            const img = document.getElementById('browserShot');
+            const urlBar = document.getElementById('browserUrl');
+            const label = document.getElementById('browserLabel');
+            const loading = document.getElementById('browserLoading');
+
+            panel.classList.add('visible');
+
+            // Hide loading overlay
+            loading.classList.add('hidden');
+
+            // Update URL bar and label
+            urlBar.textContent = shot.url || 'divar.ir';
+            if (shot.label) {
+                label.textContent = '🌐 ' + shot.label;
+                label.style.display = 'block';
+            }
+
+            // Show the screenshot
+            img.src = 'data:image/jpeg;base64,' + shot.image;
+
+            // Auto-scroll into view when first screenshot arrives
+            if (!panel.dataset.scrolled) {
+                setTimeout(() => { chat.scrollTo({ top: 0, behavior: 'smooth' }); }, 100);
+                panel.dataset.scrolled = '1';
+            }
+        }
+
+        // Handle live status updates
+        function handleStatus(status) {
+            statusPanel.classList.add('visible');
+            const el = document.getElementById('step-' + status.step);
+            if (!el) return;
+
+            // Remove hidden, set class
+            el.classList.remove('hidden');
+            el.className = 'status-step ' + status.status;
+
+            // Update text
+            el.querySelector('.step-text').textContent = status.message;
+
+            // Update progress bar
+            if (status.progress !== null && status.progress !== undefined) {
+                const bar = el.querySelector('.step-progress-bar');
+                bar.style.width = status.progress + '%';
+            }
+
+            // Mark earlier steps as done if this one is running
+            const currentIdx = stepOrder.indexOf(status.step);
+            stepOrder.forEach((s, i) => {
+                if (i < currentIdx) {
+                    const prev = document.getElementById('step-' + s);
+                    if (prev && !prev.classList.contains('hidden')) {
+                        prev.classList.remove('running', 'info');
+                        prev.classList.add('done');
+                    }
+                }
+            });
+
+            // If done or error, scroll down
+            if (status.status === 'done' || status.status === 'error') {
+                setTimeout(() => { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+            }
+        }
+
+        function hideStatusPanel() {
+            // Mark all steps as done before hiding
+            stepOrder.forEach(s => {
+                const el = document.getElementById('step-' + s);
+                if (el && !el.classList.contains('hidden')) {
+                    el.classList.remove('running', 'info');
+                    el.classList.add('done');
+                }
+            });
+            setTimeout(() => {
+                statusPanel.classList.remove('visible');
+                stepOrder.forEach(s => {
+                    const el = document.getElementById('step-' + s);
+                    if (el) {
+                        el.classList.add('hidden');
+                        el.classList.remove('done', 'running', 'error', 'info');
+                        el.querySelector('.step-text').textContent = '';
+                        el.querySelector('.step-progress-bar').style.width = '0%';
+                    }
+                });
+            }, 1500);
+        }
 
         function sendMessage() {
             const input = document.getElementById('queryInput');
