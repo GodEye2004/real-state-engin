@@ -64,6 +64,11 @@ const CATEGORY_MAP = {
   "rent-store": "rent-store",
 };
 
+const QUERY_ALIASES = {
+  ویلاهشر: "ویلاشهر",
+  ویلاشهر: "ویلاشهر",
+};
+
 /**
  * Build Divar search URL from structured search object.
  * City and category go in the URL path. Filters go as query params.
@@ -79,54 +84,19 @@ function buildDivarRequest(search) {
 
   const params = new URLSearchParams();
 
-  // Free text search
-  if (search.query) params.set("query", search.query);
+  // Normalize common Persian typing variations before sending the query.
+  if (search.query) {
+    params.set(
+      "query",
+      QUERY_ALIASES[search.query.trim()] || search.query.trim(),
+    );
+  }
 
   // Property type
   if (search.type) params.set("type", search.type);
 
-  // Bedrooms (string: "0","1","2","3","4","5")
-  if (search.rooms) params.set("rooms", String(search.rooms));
-
-  // Area range
-  if (search.size_min) params.set("size_min", String(search.size_min));
-  if (search.size_max) params.set("size_max", String(search.size_max));
-
-  // Sale price range
-  if (search.price_min) params.set("price_min", String(search.price_min));
-  if (search.price_max) params.set("price_max", String(search.price_max));
-
-  // Rent range (monthly rent for rental properties)
-  if (search.rent_min) params.set("rent_min", String(search.rent_min));
-  if (search.rent_max) params.set("rent_max", String(search.rent_max));
-
-  // Deposit/credit range (رهن)
-  if (search.credit_min) params.set("credit_min", String(search.credit_min));
-  if (search.credit_max) params.set("credit_max", String(search.credit_max));
-
-  // Boolean amenities
-  if (search.elevator === true) params.set("elevator", "true");
-  if (search.parking === true) params.set("parking", "true");
-  if (search.warehouse === true) params.set("warehouse", "true");
-  if (search.balcony === true) params.set("balcony", "true");
-
-  // Floor range
-  if (search.floor_min) params.set("floor_min", String(search.floor_min));
-  if (search.floor_max) params.set("floor_max", String(search.floor_max));
-
-  // Total floors range
-  if (search.floors_count_min)
-    params.set("floors_count_min", String(search.floors_count_min));
-  if (search.floors_count_max)
-    params.set("floors_count_max", String(search.floors_count_max));
-
-  // Building age
-  if (search.building_age_max)
-    params.set("building-age_max", String(search.building_age_max));
-
-  // Media filters
-  if (search.has_photo === true) params.set("has-photo", "true");
-  if (search.has_video === true) params.set("has-video", "true");
+  // Keep the Divar request broad. Its filter query parameters can produce an
+  // empty page even when matching listings exist; precise filtering happens below.
 
   const qs = params.toString();
   const url = `${DIVAR_BASE}/${city}/${category}${qs ? "?" + qs : ""}`;

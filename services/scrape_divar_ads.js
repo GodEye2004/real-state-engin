@@ -181,8 +181,11 @@ function normalizeAd(raw) {
     if (ageMatch) buildingAge = parseInt(ageMatch[1], 10);
     if (p.includes("نوساز") || p.match(/\bنو\b/)) buildingAge = 0;
 
-    const priceVal = parsePrice(part);
-    if (priceVal !== null) {
+    const hasMoneyMarker = /میلیارد|میلیون|تومان|اجاره|ماهانه|رهن|ودیعه/.test(
+      p,
+    );
+    const priceVal = hasMoneyMarker ? parsePrice(part) : null;
+    if (priceVal !== null && price === null) {
       if (p.includes("اجاره") || p.includes("ماهانه")) rent = priceVal;
       else if (p.includes("رهن") || p.includes("ودیعه")) credit = priceVal;
       else price = priceVal;
@@ -233,7 +236,10 @@ function normalizeAd(raw) {
     else if (t.includes("خانه") || t.includes("ویلایی")) type = "house";
   }
 
-  if (price === null) {
+  if (
+    price === null &&
+    /میلیارد|میلیون|تومان|اجاره|ماهانه|رهن|ودیعه/.test(raw.title)
+  ) {
     const titlePrice = parsePrice(raw.title);
     if (titlePrice !== null) price = titlePrice;
   }
