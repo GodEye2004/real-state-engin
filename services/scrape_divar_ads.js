@@ -1,7 +1,7 @@
 const { chromium } = require("playwright");
 
 const AD_LINK_PATTERN = 'a[href*="/v/"]';
-const MAX_SCROLL_ROUNDS = 30;
+const MAX_SCROLL_ROUNDS = 100;
 const SCROLL_WAIT_MS = 2000;
 const PAGE_LOAD_WAIT_MS = 5000;
 
@@ -44,27 +44,66 @@ async function scrollToLoadAds(page, options = {}) {
   const {
     maxRounds = MAX_SCROLL_ROUNDS,
     scrollAmount = 1400,
-    staleThreshold = 3,
+    staleThreshold = 5,
     onProgress = null,
   } = options;
   let staleCount = 0;
-  let previousCount = 0;
+  let previousUniqueCount = 0;
+  const collected = new Map();
+
   for (let i = 0; i < maxRounds; i++) {
-    const currentAds = await page.$$(AD_LINK_PATTERN);
-    const count = currentAds.length;
-    if (count === previousCount) {
+    const visibleAds = await extractRawAds(page);
+    for (const ad of visibleAds) {
+      collected.set(ad.link, ad);
+    }
+
+    const uniqueCount = collected.size;
+    if (uniqueCount === previousUniqueCount) {
       staleCount++;
       if (staleCount >= staleThreshold) break;
     } else {
       staleCount = 0;
     }
-    previousCount = count;
+
+    previousUniqueCount = uniqueCount;
+    console.log(
+      `[Scraper] Scroll ${i + 1}: ${visibleAds.length} visible, ${uniqueCount} unique`,
+    );
     if (onProgress)
-      onProgress({ round: i + 1, maxRounds, cardsVisible: count });
-    await humanScroll(page, 640, 700, scrollAmount);
+      onProgress({
+        round: i + 1,
+        maxRounds,
+        cardsVisible: visibleAds.length,
+        adsCollected: uniqueCount,
+      });
+
+    await page.evaluate((amount) => {
+      const anchors = [...document.querySelectorAll('a[href*="/v/"]')];
+      let element = anchors[0] || document.body;
+
+      while (element && element !== document.body) {
+        if (element.scrollHeight > element.clientHeight + 20) {
+          element.scrollBy(0, amount);
+          return;
+        }
+        element = element.parentElement;
+      }
+
+      window.scrollBy(0, amount);
+    }, scrollAmount);
+    await humanScroll(page, 640, 700, Math.min(scrollAmount, 800));
     await page.waitForTimeout(SCROLL_WAIT_MS);
   }
-  console.log(`[Scraper] Scroll complete. ${previousCount} cards visible.`);
+
+  const finalAds = await extractRawAds(page);
+  for (const ad of finalAds) {
+    collected.set(ad.link, ad);
+  }
+
+  console.log(
+    `[Scraper] Scroll complete. ${collected.size} unique ads collected.`,
+  );
+  return [...collected.values()];
 }
 
 function toEN(str) {
@@ -230,8 +269,8 @@ function deduplicateAds(ads) {
   });
 }
 
-async function collectAds(page) {
-  const raw = await extractRawAds(page);
+async function collectAds(page, capturedAds = null) {
+  const raw = capturedAds || (await extractRawAds(page));
   const normalized = raw.map(normalizeAd);
   const unique = deduplicateAds(normalized);
   console.log(`[Scraper] ${raw.length} raw -> ${unique.length} unique`);
