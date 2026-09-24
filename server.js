@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { createServer } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 import {
   buildDivarRequest,
@@ -17,8 +18,12 @@ const PORT = Number(process.env.PORT || 8080);
 const MONITOR_INTERVAL_MS = 30000;
 // const SCREENSHOT_QUALITY = 60;
 
-const wss = new WebSocketServer({ port: PORT });
-console.log(`WebSocket server is running on ws://localhost:${PORT}`);
+const server = createServer();
+const wss = new WebSocketServer({ server });
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`WebSocket server is running on ws://0.0.0.0:${PORT}`);
+});
 
 function broadcastStatus(step, status, message, progress = null) {
   const payload = {
