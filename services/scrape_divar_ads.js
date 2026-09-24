@@ -1,4 +1,4 @@
-const { chromium } = require("playwright");
+import { chromium } from "playwright";
 
 const AD_LINK_PATTERN = 'a[href*="/v/"]';
 const MAX_SCROLL_ROUNDS = 100;
@@ -10,7 +10,8 @@ let pageInstance = null;
 
 async function ensureBrowser() {
   if (browserInstance) return { browser: browserInstance, page: pageInstance };
-  browserInstance = await chromium.launch({ headless: false });
+  const headless = process.env.PLAYWRIGHT_HEADLESS !== "false";
+  browserInstance = await chromium.launch({ headless });
   const context = await browserInstance.newContext({
     viewport: { width: 1280, height: 850 },
   });
@@ -248,6 +249,7 @@ function normalizeAd(raw) {
     id: raw.link,
     title: raw.title,
     link: raw.link,
+    details: raw.details,
     area,
     price,
     rent,
@@ -263,6 +265,7 @@ function normalizeAd(raw) {
     balcony,
     district,
     raw_details: raw.details,
+    checked_at: new Date().toISOString(),
   };
 }
 
@@ -301,7 +304,7 @@ async function closeBrowser() {
   }
 }
 
-module.exports = {
+export {
   ensureBrowser,
   navigateToSearch,
   scrollToLoadAds,

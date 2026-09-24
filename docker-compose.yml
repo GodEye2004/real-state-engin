@@ -1,0 +1,22 @@
+services:
+  real-state-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: real-state-engine
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      PLAYWRIGHT_HEADLESS: "true"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    shm_size: "1gb"
+    networks:
+      - multiverse
+
+networks:
+  multiverse:
+    external: true
