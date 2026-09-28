@@ -8,6 +8,9 @@ import {
 import * as scraper from "./services/scrape_divar_ads.js";
 import { sendScreenshot } from "./services/screenshot.js";
 import { createMonitor } from "./services/start_monitoring.js";
+import { normalizeSearchInput } from "./services/search_normalizer.js";
+import { scoreAds } from "./services/ad_match_scorer.js";
+import { parseSearchPrompt } from "./services/search_parser.js";
 import { setupWebSocket } from "./websocket.js";
 import { createLoadMoreHandler } from "./handlers/load-more-handler.js";
 import { createStructuredSearchHandler } from "./handlers/search-handler.js";
@@ -65,6 +68,7 @@ const monitor = createMonitor({
   broadcastStatus,
   buildDivarRequest,
   applyPostFilters,
+  scoreAds,
   monitorIntervalMs: MONITOR_INTERVAL_MS,
 });
 
@@ -74,6 +78,7 @@ const handleLoadMore = createLoadMoreHandler({
   scraper,
   shared,
   applyPostFilters,
+  scoreAds,
   broadcastStatus,
   sendInfo,
 });
@@ -83,13 +88,48 @@ const handleStructuredSearch = createStructuredSearchHandler({
   shared,
   buildDivarRequest,
   applyPostFilters,
+  scoreAds,
+  normalizeSearchInput,
   broadcastStatus,
   sendInfo,
   sendScreenshot: (label) => sendScreenshot(scraper, wss, label),
   startMonitoring: monitor.startMonitoring,
 });
 
-const handleSearch = (ws, text) => handleStructuredSearch(ws, { query: text });
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(null), ms);
+
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+// Free text → LLM parses sale/rent, price, area, amenities → same pipeline.
+const handleSearch = async (ws, text) => {
+  shared.busy = true;
+
+  let parsed = null;
+
+  try {
+    parsed = await withTimeout(parseSearchPrompt(text), 15000);
+  } catch (error) {
+    console.warn("[Pipeline] Query parsing failed:", error.message);
+  }
+
+  return handleStructuredSearch(ws, {
+    ...(parsed || {}),
+    query: parsed?.query || text,
+  });
+};
 
 setupWebSocket({
   wss,

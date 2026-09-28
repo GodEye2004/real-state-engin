@@ -1,7 +1,15 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const MODEL = process.env.CHAT_MODEL || "gpt-4o-mini";
+// Built lazily so dotenv.config() in server.js has already run.
+let client = null;
+function getClient() {
+    if (!client) client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    return client;
+}
+
+function getModel() {
+    return process.env.CHAT_MODEL || "gpt-4o-mini";
+}
 
 const SYSTEM_PROMPT = `
 You are a search query parser for Divar.ir (Iranian real-estate platform).
@@ -10,7 +18,7 @@ Given a user prompt in Persian (or mixed), extract a structured search object.
 Return ONLY valid JSON with these fields (use null for anything not mentioned):
 {
   "city": "string — city name in English lowercase. Default: gorgan",
-  "category": "string — one of: buy-apartment, rent-apartment, buy-villa, rent-villa, buy-residential, rent-residential, buy-commercial-property, rent-commercial-property, buy-office, rent-office, buy-store, rent-store. Default: buy-residential",
+  "category": "string — one of: buy-apartment, rent-apartment, buy-villa, rent-villa, buy-residential, rent-residential, buy-commercial-property, rent-commercial-property, buy-office, rent-office, buy-store, rent-store. null if not mentioned (derived from deal/type later)",
   "type": "string — one of: apartment, villa, house, land, office, store. null if not specified",
   "rooms": "string — number of bedrooms as string: '0','1','2','3','4','5'. null if not mentioned",
   "size_min": "number — minimum area in square meters. null if not mentioned",
@@ -41,6 +49,13 @@ CRITICAL RULES for area (metre):
 - When user says "زیر ۱۰۰ متر" (under X), use: size_max: X, size_min: null
 - When user says "بالای ۱۵۰ متر" (above X), use: size_min: X, size_max: null
 - NEVER set only size_min without size_max for an exact number. ALWAYS create ±10 range for exact numbers.
+
+CRITICAL RULES for price/rent:
+- When user gives ONE exact price without "زیر/بالای/تا" like "۵ میلیارد", ALWAYS create a TOLERANCE RANGE: price_min = X * 0.9 rounded to 100 million, price_max = X * 1.1 rounded to 100 million. Example: "۵ میلیارد" → price_min: 4500000000, price_max: 5500000000
+- Same for ONE exact rent: "۵ میلیون اجاره" → rent_min: 4000000, rent_max: 6000000 (±20%, rounded to 100 thousand)
+- "زیر/تا X" → price_max: X, price_min: null
+- "بالای X" → price_min: X, price_max: null
+- "X تا Y" → use exactly X and Y
 
 Conversion rules:
 - "میلیارد" = 1,000,000,000 Tomans
@@ -82,8 +97,8 @@ Output: {"city":"gorgan","category":"buy-apartment","type":"apartment","rooms":n
 `;
 
 async function parseSearchPrompt(userPrompt) {
-  const completion = await openai.chat.completions.create({
-    model: MODEL,
+  const completion = await getClient().chat.completions.create({
+    model: getModel(),
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
@@ -97,7 +112,7 @@ async function parseSearchPrompt(userPrompt) {
 
   return {
     city: parsed.city || "gorgan",
-    category: parsed.category || "buy-residential",
+    category: parsed.category || null,
     type: parsed.type || null,
     rooms: parsed.rooms || null,
     size_min: parsed.size_min || null,

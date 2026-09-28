@@ -3,6 +3,8 @@ export function createStructuredSearchHandler({
     shared,
     buildDivarRequest,
     applyPostFilters,
+    scoreAds,
+    normalizeSearchInput,
     broadcastStatus,
     sendInfo,
     sendScreenshot,
@@ -13,24 +15,7 @@ export function createStructuredSearchHandler({
         shared.seenAds.clear();
 
         try {
-            const search = {
-                city: formData.city || "gorgan",
-                category: formData.category || "buy-apartment",
-                type: formData.type || null,
-                rooms: formData.rooms || null,
-                size_min: formData.size_min || null,
-                size_max: formData.size_max || null,
-                price_min: formData.price_min || null,
-                price_max: formData.price_max || null,
-                rent_min: formData.rent_min || null,
-                rent_max: formData.rent_max || null,
-                credit_min: formData.credit_min || null,
-                credit_max: formData.credit_max || null,
-                elevator: formData.elevator || null,
-                parking: formData.parking || null,
-                warehouse: formData.warehouse || null,
-                query: formData.query || null,
-            };
+            const search = normalizeSearchInput(formData || {});
 
             shared.lastSearch = search;
 
@@ -42,6 +27,14 @@ export function createStructuredSearchHandler({
             const { url, postFilters } = buildDivarRequest(search);
 
             shared.lastPostFilters = postFilters;
+
+            ws.send(
+                JSON.stringify({
+                    type: "applied-filters",
+                    data: search,
+                    postFilters,
+                }),
+            );
 
             broadcastStatus("adapt", "done", "آدرس ساخته شد");
 
@@ -58,6 +51,8 @@ export function createStructuredSearchHandler({
             broadcastStatus("scroll", "running", "در حال اسکرول...");
 
             const capturedAds = await scraper.scrollToLoadAds(page, {
+                maxRounds: 10,
+                staleThreshold: 3,
                 onProgress: ({ round, maxRounds, cardsVisible }) => {
                     const progress = Math.round((round / maxRounds) * 100);
 
@@ -78,7 +73,13 @@ export function createStructuredSearchHandler({
 
             console.log(`[Pipeline] Before post-filter: ${ads.length} ads`);
 
-            ads = applyPostFilters(ads, postFilters);
+            ads = applyPostFilters(ads, postFilters, {
+                scoreBoundsOnly: true,
+            });
+
+            ads = scoreAds(ads, search, {
+                weights: search.match_weights || undefined,
+            });
 
             console.log(`[Pipeline] After post-filter: ${ads.length} ads`);
 

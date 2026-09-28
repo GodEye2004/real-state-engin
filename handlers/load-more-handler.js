@@ -2,6 +2,7 @@ export function createLoadMoreHandler({
     scraper,
     shared,
     applyPostFilters,
+    scoreAds,
     broadcastStatus,
     sendInfo,
 }) {
@@ -27,18 +28,29 @@ export function createLoadMoreHandler({
                 },
             });
 
-            const ads = applyPostFilters(
+            const filteredAds = applyPostFilters(
                 await scraper.collectAds(page, capturedAds),
                 shared.lastPostFilters,
+                { scoreBoundsOnly: true },
             );
+            const newAds = filteredAds.filter(
+                (ad) => !shared.seenAds.has(ad.link),
+            );
+            const ads = scoreAds(newAds, shared.lastSearch || {}, {
+                weights: shared.lastSearch?.match_weights || undefined,
+            });
 
             ads.forEach((ad) => {
                 shared.seenAds.add(ad.link);
             });
 
-            shared.adCount = ads.length;
+            shared.adCount += ads.length;
 
-            broadcastStatus("collect", "done", `${ads.length} آگهی یافت شد`);
+            broadcastStatus(
+                "collect",
+                "done",
+                `${ads.length} آگهی جدید یافت شد`,
+            );
 
             ws.send(
                 JSON.stringify({
@@ -51,7 +63,7 @@ export function createLoadMoreHandler({
             ws.send(
                 JSON.stringify({
                     type: "ad-count",
-                    count: ads.length,
+                    count: shared.adCount,
                 }),
             );
         } catch (error) {

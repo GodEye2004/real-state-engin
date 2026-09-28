@@ -7,6 +7,7 @@ export function createMonitor({
     broadcastStatus,
     buildDivarRequest,
     applyPostFilters,
+    scoreAds,
     monitorIntervalMs,
 }) {
     let monitor = null;
@@ -32,10 +33,14 @@ export function createMonitor({
 
                 const page = await scraper.navigateToSearch(url);
 
-                const ads = applyPostFilters(
+                const filteredAds = applyPostFilters(
                     await scraper.collectAds(page),
                     shared.lastPostFilters,
+                    { scoreBoundsOnly: true },
                 );
+                const ads = scoreAds(filteredAds, shared.lastSearch, {
+                    weights: shared.lastSearch.match_weights || undefined,
+                });
 
                 const newAds = ads.filter((ad) => {
                     if (shared.seenAds.has(ad.link)) {

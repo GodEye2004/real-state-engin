@@ -108,13 +108,15 @@ function buildDivarRequest(search) {
     postFilters.type = search.type;
     postFilters.type_verified_by_source = true;
   }
-  if (search.rooms) postFilters.rooms = String(search.rooms);
-  if (search.size_min) postFilters.size_min = search.size_min;
-  if (search.size_max) postFilters.size_max = search.size_max;
-  if (search.price_min) postFilters.price_min = search.price_min;
-  if (search.price_max) postFilters.price_max = search.price_max;
-  if (search.rent_min) postFilters.rent_min = search.rent_min;
-  if (search.rent_max) postFilters.rent_max = search.rent_max;
+  if (search.rooms != null) postFilters.rooms = String(search.rooms);
+  if (search.size_min != null) postFilters.size_min = search.size_min;
+  if (search.size_max != null) postFilters.size_max = search.size_max;
+  if (search.price_min != null) postFilters.price_min = search.price_min;
+  if (search.price_max != null) postFilters.price_max = search.price_max;
+  if (search.rent_min != null) postFilters.rent_min = search.rent_min;
+  if (search.rent_max != null) postFilters.rent_max = search.rent_max;
+  if (search.credit_min != null) postFilters.credit_min = search.credit_min;
+  if (search.credit_max != null) postFilters.credit_max = search.credit_max;
   if (search.elevator === true) postFilters.elevator = true;
   if (search.parking === true) postFilters.parking = true;
   if (search.warehouse === true) postFilters.warehouse = true;
@@ -127,73 +129,165 @@ function buildDivarRequest(search) {
  * Apply post-filters to scraped ads for extra precision.
  * When a user specifies a filter, ads missing that data are REJECTED.
  */
-function applyPostFilters(ads, filters) {
+function applyPostFilters(
+  ads,
+  filters,
+  { scoreBoundsOnly = false, maxBudgetOverrunFraction = 0.25 } = {},
+) {
   if (!filters || Object.keys(filters).length === 0) return ads;
+
+  const activeFilters = scoreBoundsOnly
+    ? Object.fromEntries(
+        Object.entries(filters).filter(
+          ([key]) =>
+            !["size_min", "size_max", "price_min", "price_max"].includes(key),
+        ),
+      )
+    : filters;
 
   return ads
     .filter((ad) => {
+      if (
+        scoreBoundsOnly &&
+        filters.price_max != null &&
+        ad.price != null &&
+        Number.isFinite(Number(filters.price_max)) &&
+        Number.isFinite(Number(ad.price)) &&
+        Number(ad.price) >
+          Number(filters.price_max) * (1 + maxBudgetOverrunFraction)
+      ) {
+        return false;
+      }
+
       // Type filter — if ad has type data, check it. If null, keep (Divar URL filtered).
-      if (filters.type && ad.type !== null && ad.type !== undefined) {
-        if (ad.type !== filters.type) return false;
+      if (activeFilters.type && ad.type !== null && ad.type !== undefined) {
+        if (ad.type !== activeFilters.type) return false;
       }
 
       // Rooms filter — if ad has rooms data, check it
-      if (filters.rooms && ad.rooms !== null && ad.rooms !== undefined) {
-        if (String(ad.rooms) !== String(filters.rooms)) return false;
+      if (
+        activeFilters.rooms != null &&
+        ad.rooms !== null &&
+        ad.rooms !== undefined
+      ) {
+        if (String(ad.rooms) !== String(activeFilters.rooms)) return false;
       }
 
       // Area min — if ad has area, check it. If null, keep.
-      if (filters.size_min && ad.area !== null && ad.area !== undefined) {
-        if (ad.area < filters.size_min) return false;
+      if (
+        activeFilters.size_min != null &&
+        ad.area !== null &&
+        ad.area !== undefined
+      ) {
+        if (ad.area < activeFilters.size_min) return false;
       }
 
       // Area max — if ad has area, check it. If null, keep.
-      if (filters.size_max && ad.area !== null && ad.area !== undefined) {
-        if (ad.area > filters.size_max) return false;
+      if (
+        activeFilters.size_max != null &&
+        ad.area !== null &&
+        ad.area !== undefined
+      ) {
+        if (ad.area > activeFilters.size_max) return false;
       }
 
       // Price range — if ad has price, check it
-      if (filters.price_min && ad.price !== null && ad.price !== undefined) {
-        if (ad.price < filters.price_min) return false;
+      if (
+        activeFilters.price_min != null &&
+        ad.price !== null &&
+        ad.price !== undefined
+      ) {
+        if (ad.price < activeFilters.price_min) return false;
       }
-      if (filters.price_max && ad.price !== null && ad.price !== undefined) {
-        if (ad.price > filters.price_max) return false;
+      if (
+        activeFilters.price_max != null &&
+        ad.price !== null &&
+        ad.price !== undefined
+      ) {
+        if (ad.price > activeFilters.price_max) return false;
       }
 
       // Rent range — if ad has rent, check it
-      if (filters.rent_min && ad.rent !== null && ad.rent !== undefined) {
-        if (ad.rent < filters.rent_min) return false;
+      if (
+        activeFilters.rent_min != null &&
+        ad.rent !== null &&
+        ad.rent !== undefined
+      ) {
+        if (ad.rent < activeFilters.rent_min) return false;
       }
-      if (filters.rent_max && ad.rent !== null && ad.rent !== undefined) {
-        if (ad.rent > filters.rent_max) return false;
+      if (
+        activeFilters.rent_max != null &&
+        ad.rent !== null &&
+        ad.rent !== undefined
+      ) {
+        if (ad.rent > activeFilters.rent_max) return false;
+      }
+
+      // Credit/رهن range — if ad has credit, check it
+      if (
+        activeFilters.credit_min != null &&
+        ad.credit !== null &&
+        ad.credit !== undefined
+      ) {
+        if (ad.credit < activeFilters.credit_min) return false;
+      }
+      if (
+        activeFilters.credit_max != null &&
+        ad.credit !== null &&
+        ad.credit !== undefined
+      ) {
+        if (ad.credit > activeFilters.credit_max) return false;
       }
 
       // Amenities — reject if user wants it but ad explicitly says no
-      if (filters.elevator === true && ad.elevator === false) return false;
-      if (filters.parking === true && ad.parking === false) return false;
-      if (filters.warehouse === true && ad.warehouse === false) return false;
-      if (filters.balcony === true && ad.balcony === false) return false;
+      if (activeFilters.elevator === true && ad.elevator === false)
+        return false;
+      if (activeFilters.parking === true && ad.parking === false) return false;
+      if (activeFilters.warehouse === true && ad.warehouse === false)
+        return false;
+      if (activeFilters.balcony === true && ad.balcony === false) return false;
 
       return true;
     })
     .map((ad) => {
       const unknown = [];
-      if (filters.type && !filters.type_verified_by_source && ad.type == null)
+      if (
+        activeFilters.type &&
+        !activeFilters.type_verified_by_source &&
+        ad.type == null
+      )
         unknown.push("نوع ملک");
-      if (filters.rooms && ad.rooms == null) unknown.push("تعداد خواب");
-      if ((filters.size_min || filters.size_max) && ad.area == null)
+      if (activeFilters.rooms != null && ad.rooms == null)
+        unknown.push("تعداد خواب");
+      if (
+        (activeFilters.size_min != null || activeFilters.size_max != null) &&
+        ad.area == null
+      )
         unknown.push("متراژ");
-      if ((filters.price_min || filters.price_max) && ad.price == null)
+      if (
+        (activeFilters.price_min != null || activeFilters.price_max != null) &&
+        ad.price == null
+      )
         unknown.push("قیمت");
-      if ((filters.rent_min || filters.rent_max) && ad.rent == null)
+      if (
+        (activeFilters.rent_min != null || activeFilters.rent_max != null) &&
+        ad.rent == null
+      )
         unknown.push("اجاره");
-      if (filters.elevator === true && ad.elevator == null)
+      if (
+        (activeFilters.credit_min != null ||
+          activeFilters.credit_max != null) &&
+        ad.credit == null
+      )
+        unknown.push("رهن");
+      if (activeFilters.elevator === true && ad.elevator == null)
         unknown.push("آسانسور");
-      if (filters.parking === true && ad.parking == null)
+      if (activeFilters.parking === true && ad.parking == null)
         unknown.push("پارکینگ");
-      if (filters.warehouse === true && ad.warehouse == null)
+      if (activeFilters.warehouse === true && ad.warehouse == null)
         unknown.push("انباری");
-      if (filters.balcony === true && ad.balcony == null) unknown.push("بالکن");
+      if (activeFilters.balcony === true && ad.balcony == null)
+        unknown.push("بالکن");
 
       return {
         ...ad,
