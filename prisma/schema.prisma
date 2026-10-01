@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone     String    @unique @db.VarChar(20)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  sessions  Session[]
+  searches  Search[]
+
+  @@map("users")
+}
+
+model OtpCode {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone     String   @db.VarChar(20)
+  codeHash  String   @map("code_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([expiresAt], map: "idx_otp_codes_expires_at")
+  @@index([phone], map: "idx_otp_codes_phone")
+  @@map("otp_codes")
+}
+
+model Session {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  connectedAt    DateTime @default(now()) @map("connected_at") @db.Timestamptz(6)
+  disconnectedAt DateTime? @map("disconnected_at") @db.Timestamptz(6)
+  isActive       Boolean  @default(true) @map("is_active")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  searches       Search[]
+
+  @@index([isActive], map: "idx_sessions_active")
+  @@index([userId], map: "idx_sessions_user_id")
+  @@map("sessions")
+}
+
+model Search {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String         @map("user_id") @db.Uuid
+  sessionId    String?        @map("session_id") @db.Uuid
+  query        String
+  filters      Json?
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  session      Session?       @relation(fields: [sessionId], references: [id], onUpdate: NoAction)
+  results      SearchResult[]
+
+  @@index([filters], map: "idx_searches_filters", type: Gin)
+  @@index([sessionId], map: "idx_searches_session_id")
+  @@index([userId], map: "idx_searches_user_id")
+  @@map("searches")
+}
+
+model Ad {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalId    String         @unique @map("external_id")
+  title         String?
+  link          String?
+  details       String?
+  area          Int?
+  price         BigInt?
+  rent          BigInt?
+  credit        BigInt?
+  rooms         Int?
+  floor         Int?
+  floorsCount   Int?           @map("floors_count")
+  buildingAge   Int?           @map("building_age")
+  type          String?
+  elevator      Boolean?
+  parking       Boolean?
+  warehouse     Boolean?
+  balcony       Boolean?
+  district      String?
+  rawDetails    String?        @map("raw_details")
+  checkedAt     DateTime?      @map("checked_at") @db.Timestamptz(6)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
+  searchResults SearchResult[]
+
+  @@index([area], map: "idx_ads_area")
+  @@index([district], map: "idx_ads_district")
+  @@index([externalId], map: "idx_ads_external_id")
+  @@index([price], map: "idx_ads_price")
+  @@index([rooms], map: "idx_ads_rooms")
+  @@index([type], map: "idx_ads_type")
+  @@map("ads")
+}
+
+model SearchResult {
+  searchId       String   @map("search_id") @db.Uuid
+  adId           String   @map("ad_id") @db.Uuid
+  matchScore     Decimal? @map("match_score") @db.Decimal(5, 2)
+  matchBreakdown Json?    @map("match_breakdown")
+  isBestMatch    Boolean  @default(false) @map("is_best_match")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  search         Search   @relation(fields: [searchId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ad             Ad       @relation(fields: [adId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([searchId, adId])
+  @@index([adId], map: "idx_search_results_ad_id")
+  @@index([matchScore], map: "idx_search_results_score")
+  @@index([searchId], map: "idx_search_results_search_id")
+  @@map("search_results")
+}

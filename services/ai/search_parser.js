@@ -3,12 +3,12 @@ import OpenAI from "openai";
 // Built lazily so dotenv.config() in server.js has already run.
 let client = null;
 function getClient() {
-    if (!client) client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    return client;
+  if (!client) client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return client;
 }
 
 function getModel() {
-    return process.env.CHAT_MODEL || "gpt-4o-mini";
+  return process.env.CHAT_MODEL || "gpt-4o-mini";
 }
 
 const SYSTEM_PROMPT = `

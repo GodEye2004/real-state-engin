@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light">
+        <title>Estate Engine API</title>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap");
+            :root {
+                font-family: "DM Sans", "Segoe UI", sans-serif;
+                color: #19231f;
+                background: #f3f5f0;
+                --ink: #19231f;
+                --muted: #69746e;
+                --line: #d9dfd9;
+                --green: #1d5b4e;
+                --lime: #c9e66c;
+                --mint: #dff0e2;
+                --amber: #fff1d8;
+                --code: #172622;
+                --white: #fff;
+                --mono: "DM Mono", ui-monospace, monospace;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                min-width: 320px;
+            }
+            button,
+            input,
+            textarea {
+                font: inherit;
+            }
+            button {
+                cursor: pointer;
+            }
+            code,
+            pre,
+            textarea,
+            .mono {
+                font-family: var(--mono);
+            }
+            .topbar {
+                height: 64px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 26px;
+                color: #f5f7f1;
+                background: #172622;
+                border-bottom: 3px solid var(--lime);
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                font-weight: 700;
+            }
+            .mark {
+                width: 27px;
+                height: 27px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 3px;
+                padding: 4px;
+                background: var(--lime);
+                border-radius: 5px;
+                transform: rotate(-5deg);
+            }
+            .mark i {
+                background: #254a3e;
+                border-radius: 2px;
+            }
+            .mark i:last-child {
+                grid-column: 1/3;
+            }
+            .top-meta {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                color: #c1cec7;
+                font-size: 12px;
+            }
+            .badge {
+                padding: 5px 8px;
+                color: #e5efb2;
+                border: 1px solid #586b60;
+                border-radius: 4px;
+                font-family: var(--mono);
+                font-size: 10px;
+            }
+            .shell {
+                width: min(1500px, 100%);
+                min-height: calc(100vh - 64px);
+                margin: auto;
+                display: grid;
+                grid-template-columns: 210px minmax(0, 1fr) 330px;
+            }
+            .sidebar {
+                padding: 25px 15px;
+                background: #ecefe8;
+                border-right: 1px solid var(--line);
+            }
+            .nav-group {
+                margin-bottom: 25px;
+            }
+            .side-label {
+                margin: 0 0 9px 9px;
+                color: #79847d;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.09em;
+                text-transform: uppercase;
+            }
+            .nav-link {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                margin: 2px 0;
+                padding: 9px;
+                color: #47534c;
+                border-radius: 5px;
+                text-decoration: none;
+                font-size: 12px;
+            }
+            .nav-link:hover,
+            .nav-link.active {
+                color: var(--green);
+                background: #dce9df;
+            }
+            .nav-link small {
+                color: #89948d;
+                font-family: var(--mono);
+                font-size: 9px;
+            }
+            .sidebar-note {
+                margin-top: 32px;
+                padding: 12px;
+                color: #5b6761;
+                background: #e1e7dd;
+                border-left: 3px solid #b4d35b;
+                font-size: 11px;
+                line-height: 1.55;
+            }
+            main {
+                min-width: 0;
+                padding: 32px clamp(16px, 3vw, 40px) 60px;
+            }
+            .eyebrow {
+                margin: 0 0 7px;
+                color: var(--green);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+            h1 {
+                margin: 0;
+                font-size: clamp(25px, 3vw, 34px);
+                line-height: 1.15;
+                letter-spacing: 0;
+            }
+            .intro {
+                max-width: 700px;
+                margin: 10px 0 18px;
+                color: var(--muted);
+                font-size: 13px;
+                line-height: 1.6;
+            }
+            .connection-chip {
+                display: inline-flex;
+                gap: 7px;
+                align-items: center;
+                margin-bottom: 17px;
+                padding: 7px 9px;
+                color: #174e40;
+                background: var(--mint);
+                border-radius: 4px;
+                font: 11px var(--mono);
+            }
+            .connection-chip b {
+                padding: 3px 5px;
+                color: white;
+                background: var(--green);
+                border-radius: 3px;
+                font-size: 9px;
+            }
+            .section-title {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 10px;
+                margin: 27px 0 10px;
+            }
+            .section-title h2 {
+                margin: 0;
+                font-size: 16px;
+            }
+            .section-title span {
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .operation {
+                margin: 9px 0;
+                overflow: hidden;
+                background: var(--white);
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                box-shadow: 0 6px 20px #18372a0a;
+                scroll-margin-top: 14px;
+                animation: appear 0.25s ease-out both;
+            }
+            .operation summary {
+                display: grid;
+                grid-template-columns: 44px minmax(0, 1fr) 14px;
+                align-items: center;
+                gap: 12px;
+                padding: 14px;
+                cursor: pointer;
+                list-style: none;
+            }
+            .operation summary::-webkit-details-marker {
+                display: none;
+            }
+            .operation summary:after {
+                content: "+";
+                color: #68766e;
+                font-size: 19px;
+            }
+            .operation[open] summary:after {
+                content: "−";
+            }
+            .verb {
+                padding: 5px 4px;
+                color: #14563f;
+                background: #def1e1;
+                border-radius: 4px;
+                text-align: center;
+                font: 500 9px var(--mono);
+            }
+            .op-title {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: baseline;
+                gap: 8px;
+            }
+            .op-title strong {
+                font-size: 13px;
+            }
+            .op-title code {
+                color: #596b62;
+                font-size: 10px;
+            }
+            .op-summary {
+                margin-top: 4px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .operation-body {
+                padding: 0 14px 16px;
+                border-top: 1px solid #edf0ec;
+            }
+            .operation-body > p {
+                color: #59645e;
+                font-size: 12px;
+                line-height: 1.6;
+            }
+            .body-grid {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(175px, 0.8fr);
+                gap: 12px;
+                margin-top: 13px;
+            }
+            .mini-label {
+                display: block;
+                margin: 10px 0 6px;
+                color: #758178;
+                font-size: 9px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+            .request {
+                width: 100%;
+                min-height: 125px;
+                resize: vertical;
+                padding: 11px;
+                color: #edf4ee;
+                background: var(--code);
+                border: 1px solid #263a33;
+                border-radius: 4px;
+                font-size: 10px;
+                line-height: 1.55;
+                tab-size: 2;
+            }
+            .send-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 7px;
+                margin-top: 7px;
+            }
+            .button {
+                min-height: 32px;
+                padding: 0 11px;
+                color: white;
+                background: var(--green);
+                border: 1px solid var(--green);
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+            .button:hover {
+                background: #16483d;
+            }
+            .button.secondary {
+                color: #35443d;
+                background: white;
+                border-color: #cbd3cc;
+            }
+            .button.secondary:hover {
+                background: #f3f6f1;
+            }
+            .button:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+            .response-types {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                margin: 7px 0;
+            }
+            .response-types code {
+                padding: 5px 6px;
+                color: #72501e;
+                background: var(--amber);
+                border-radius: 3px;
+                font-size: 9px;
+            }
+            .table-wrap {
+                overflow-x: auto;
+                margin-top: 9px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 10px;
+            }
+            th,
+            td {
+                padding: 7px;
+                border-bottom: 1px solid #e7ebe6;
+                text-align: left;
+                vertical-align: top;
+            }
+            th {
+                color: #66736b;
+                background: #f4f6f2;
+                font-size: 9px;
+            }
+            td code {
+                color: #245d4d;
+            }
+            .example {
+                max-height: 170px;
+                overflow: auto;
+                margin: 8px 0 0;
+                padding: 10px;
+                color: #e2eee6;
+                background: var(--code);
+                border-radius: 4px;
+                font: 9px/1.5 var(--mono);
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+            .field-table {
+                margin-top: 14px;
+            }
+            .callout {
+                margin-top: 10px;
+                padding: 9px 11px;
+                color: #67522d;
+                background: #fff6e5;
+                border-left: 3px solid #e8b956;
+                font-size: 10px;
+                line-height: 1.55;
+            }
+            .flutter-code {
+                overflow: auto;
+                margin: 0;
+                padding: 12px;
+                color: #e3eee6;
+                background: var(--code);
+                border-radius: 4px;
+                font: 10px/1.55 var(--mono);
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+            .copy-flutter {
+                margin: 9px 0;
+            }
+            .footer-note {
+                margin: 20px 0 0;
+                color: #7c8780;
+                font-size: 10px;
+                line-height: 1.5;
+            }
+            .rail {
+                min-width: 0;
+                padding: 24px 15px;
+                background: #ecefe9;
+                border-left: 1px solid var(--line);
+            }
+            .rail-panel {
+                margin-bottom: 13px;
+                padding: 14px;
+                background: white;
+                border: 1px solid var(--line);
+                border-radius: 6px;
+            }
+            .panel-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 7px;
+                margin-bottom: 10px;
+            }
+            .panel-head h2 {
+                margin: 0;
+                font-size: 12px;
+            }
+            .socket-state {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: #69746e;
+                font-size: 9px;
+            }
+            .socket-state:before {
+                content: "";
+                width: 7px;
+                height: 7px;
+                background: #a0aaa4;
+                border-radius: 50%;
+            }
+            .socket-state.connected {
+                color: #1c674d;
+            }
+            .socket-state.connected:before {
+                background: #35a575;
+                box-shadow: 0 0 0 3px #e1f2e8;
+            }
+            .connection-row {
+                display: flex;
+                gap: 5px;
+            }
+            .connection-row input {
+                min-width: 0;
+                flex: 1;
+                height: 32px;
+                padding: 0 8px;
+                background: #fafbf8;
+                border: 1px solid #d7ded8;
+                border-radius: 4px;
+                font: 9px var(--mono);
+            }
+            .connection-row .button {
+                padding: 0 8px;
+            }
+            .connection-help {
+                margin: 8px 0 0;
+                color: #78837d;
+                font-size: 9px;
+                line-height: 1.5;
+            }
+            .event-actions {
+                display: flex;
+                justify-content: space-between;
+                gap: 6px;
+                margin-bottom: 9px;
+            }
+            .event-actions .button {
+                min-height: 26px;
+                font-size: 9px;
+            }
+            .event-list {
+                display: grid;
+                gap: 7px;
+                max-height: 340px;
+                overflow: auto;
+            }
+            .event {
+                padding: 8px;
+                background: #f7f8f5;
+                border: 1px solid #e4e8e2;
+                border-left: 3px solid #d5a64f;
+                border-radius: 4px;
+            }
+            .event-head {
+                display: flex;
+                justify-content: space-between;
+                gap: 6px;
+                margin-bottom: 5px;
+                color: #4b5a52;
+                font-size: 9px;
+            }
+            .event pre {
+                max-height: 140px;
+                overflow: auto;
+                margin: 0;
+                color: #31453c;
+                font: 9px/1.45 var(--mono);
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+            .event img {
+                display: block;
+                width: 100%;
+                max-height: 150px;
+                margin-top: 7px;
+                object-fit: contain;
+                background: #e8ece7;
+            }
+            .empty-feed {
+                margin: 0;
+                color: #89948e;
+                font-size: 10px;
+                line-height: 1.6;
+            }
+            .event-types {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 7px 10px;
+                font-size: 10px;
+            }
+            .event-types code {
+                color: #245d4d;
+            }
+            .event-types span {
+                color: #78837d;
+                text-align: right;
+            }
+            @keyframes appear {
+                from {
+                    opacity: 0;
+                    transform: translateY(5px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            @media (max-width: 1100px) {
+                .shell {
+                    grid-template-columns: 185px minmax(0, 1fr);
+                }
+                .rail {
+                    grid-column: 2;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    border-left: 0;
+                    border-top: 1px solid var(--line);
+                }
+                .rail-panel {
+                    margin: 0;
+                }
+            }
+            @media (max-width: 680px) {
+                .topbar {
+                    height: 56px;
+                    padding: 0 14px;
+                }
+                .top-meta {
+                    gap: 8px;
+                    font-size: 10px;
+                }
+                .top-meta span:first-child {
+                    display: none;
+                }
+                .shell {
+                    display: block;
+                }
+                .sidebar {
+                    display: flex;
+                    gap: 4px;
+                    overflow-x: auto;
+                    padding: 8px;
+                    border-right: 0;
+                    border-bottom: 1px solid var(--line);
+                }
+                .nav-group {
+                    display: flex;
+                    flex: 0 0 auto;
+                    margin: 0;
+                }
+                .side-label,
+                .sidebar-note {
+                    display: none;
+                }
+                .nav-link {
+                    margin: 0;
+                    padding: 8px;
+                    white-space: nowrap;
+                }
+                .nav-link small {
+                    display: none;
+                }
+                main {
+                    padding: 24px 13px 35px;
+                }
+                .operation summary {
+                    grid-template-columns: 40px minmax(0, 1fr) 12px;
+                    gap: 8px;
+                    padding: 12px;
+                }
+                .operation-body {
+                    padding: 0 11px 13px;
+                }
+                .body-grid {
+                    grid-template-columns: 1fr;
+                }
+                .rail {
+                    display: block;
+                    padding: 13px;
+                    border-top: 1px solid var(--line);
+                }
+                .rail-panel {
+                    margin-bottom: 10px;
+                }
+                .section-title {
+                    margin-top: 23px;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .operation {
+                    animation: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar"><div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>Estate Engine</div><div class="top-meta"><span>Realtime API reference</span><span class="badge">WEBSOCKET · V1</span></div></header>
+        <div class="shell">
+            <aside class="sidebar" aria-label="API navigation">
+                <div id="operation-nav"></div>
+                <div class="sidebar-note">Send JSON frames to one WebSocket connection. Responses arrive as separate frames.</div>
+            </aside>
+            <main>
+                <p class="eyebrow">Developer reference · JSON frames</p><h1>Live API explorer</h1>
+                <p class="intro">Inspect each action, edit its example payload, and send it to the running backend. Response events appear in the live feed.</p>
+                <div class="connection-chip"><b>WS</b><span id="endpoint-label">ws://localhost:8080</span></div>
+                <div id="operation-list"></div>
+                <section id="flutter" class="rail-panel field-table"><div class="panel-head"><h2>Flutter quick start</h2><span class="badge">DART</span></div>
+                    <p class="intro">Connect once, listen for response <code>type</code> values, and send JSON-encoded maps.</p>
+                    <pre class="flutter-code" id="flutter-sample">import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+final channel = WebSocketChannel.connect(
+  Uri.parse('ws://localhost:8080'),
+);
+
+channel.stream.listen((frame) {
+  final message = jsonDecode(frame as String)
+      as Map&lt;String, dynamic&gt;;
+  if (message['type'] == 'otp-sent') {
+    print(message['mockCode']); // mock mode only
+  } else if (message['type'] == 'results') {
+    final ads = message['data'] as List&lt;dynamic&gt;;
+    print('Received ${ads.length} ads');
+  }
+});
+
+channel.sink.add(jsonEncode({
+  'action': 'request_otp',
+  'phone': '09123456789',
+}));</pre>
+                    <button class="button secondary copy-flutter">Copy Flutter sample</button>
+                    <p class="connection-help">For Android Emulator, use <code>10.0.2.2</code> instead of <code>localhost</code>. Add the <code>web_socket_channel</code> package to your Flutter app.</p>
+                </section>
+                <p class="footer-note">This service exposes WebSocket actions rather than REST endpoints. Mock OTP codes are returned only when mock mode is enabled.</p>
+            </main>
+            <aside class="rail" aria-label="Connection and responses">
+                <section class="rail-panel"><div class="panel-head"><h2>WebSocket connection</h2><span class="socket-state" id="socket-state">Disconnected</span></div>
+                    <div class="connection-row"><input id="socket-url" aria-label="WebSocket URL" spellcheck="false"><button class="button" id="connect-button">Connect</button></div>
+                    <p class="connection-help">Use the same host and port as the backend. Search actions may take a while to return results.</p>
+                </section>
+                <section class="rail-panel"><div class="panel-head"><h2>Incoming frames</h2><span class="badge" id="event-count">0</span></div>
+                    <div class="event-actions"><button class="button secondary" id="clear-events">Clear feed</button><span class="connection-help">Latest 35 frames</span></div>
+                    <div class="event-list" id="event-list"><p class="empty-feed">Connect to the server to see status messages and responses.</p></div>
+                </section>
+                <section class="rail-panel"><div class="panel-head"><h2>Response types</h2><span class="badge">SERVER → APP</span></div>
+                    <div class="event-types" id="response-events"></div>
+                </section>
+            </aside>
+        </div>
+        <script type="module">
+            const registryResponse = await fetch("/api-docs.json");
+            if (!registryResponse.ok) throw new Error("Could not load API registry");
+            const { operations, responseEvents } = await registryResponse.json();
+
+            const escapeHtml = (value) =>
+                String(value).replace(
+                    /[&<>"']/g,
+                    (char) =>
+                        ({
+                            "&": "&amp;",
+                            "<": "&lt;",
+                            ">": "&gt;",
+                            '"': "&quot;",
+                            "'": "&#39;",
+                        })[char],
+                );
+            const sections = document.getElementById("operation-list");
+            const navigation = document.getElementById("operation-nav");
+            const navigationGroups = new Map();
+            for (const operation of operations) {
+                if (!navigationGroups.has(operation.group)) {
+                    const group = document.createElement("div");
+                    group.className = "nav-group";
+                    const label = document.createElement("p");
+                    label.className = "side-label";
+                    label.textContent = operation.group;
+                    group.append(label);
+                    navigation.append(group);
+                    navigationGroups.set(operation.group, group);
+                }
+
+                const link = document.createElement("a");
+                link.className = "nav-link";
+                link.href = `#${operation.id}`;
+                link.append(document.createTextNode(operation.title));
+                const protocol = document.createElement("small");
+                protocol.textContent = "WS";
+                link.append(protocol);
+                navigationGroups.get(operation.group).append(link);
+            }
+
+            const responseEventList = document.getElementById("response-events");
+            for (const event of responseEvents) {
+                const name = document.createElement("code");
+                name.textContent = event.type;
+                const description = document.createElement("span");
+                description.textContent = event.description;
+                responseEventList.append(name, description);
+            }
+
+            let currentGroup = "";
+            for (const operation of operations) {
+                if (operation.group !== currentGroup) {
+                    currentGroup = operation.group;
+                    sections.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="section-title"><h2>${escapeHtml(currentGroup)}</h2><span>${currentGroup === "Authentication" ? "Phone verification" : "Search and pagination"}</span></div>`,
+                    );
+                }
+                const fields = operation.fields
+                    .map(
+                        ([name, type, description]) =>
+                            `<tr><td><code>${escapeHtml(name)}</code></td><td>${escapeHtml(type)}</td><td>${escapeHtml(description)}</td></tr>`,
+                    )
+                    .join("");
+                const responseTypes = operation.responses
+                    .map((type) => `<code>${escapeHtml(type)}</code>`)
+                    .join("");
+                const details = `<details class="operation" id="${operation.id}"><summary><span class="verb">SEND</span><div><div class="op-title"><strong>${escapeHtml(operation.title)}</strong><code>action: ${escapeHtml(operation.action)}</code></div><div class="op-summary">${escapeHtml(operation.description)}</div></div></summary><div class="operation-body"><p>${escapeHtml(operation.description)}</p><div class="body-grid"><div><label class="mini-label" for="json-${operation.id}">Request JSON</label><textarea class="request" id="json-${operation.id}" spellcheck="false">${escapeHtml(JSON.stringify(operation.request, null, 2))}</textarea><div class="send-row"><button class="button send-message" data-request="json-${operation.id}">Send request</button><button class="button secondary copy-json" data-request="json-${operation.id}">Copy JSON</button></div></div><div><span class="mini-label">Response frames</span><div class="response-types">${responseTypes}</div><pre class="example">${escapeHtml(JSON.stringify(operation.example, null, 2))}</pre></div></div><div class="table-wrap"><table><thead><tr><th>Field</th><th>Type</th><th>Details</th></tr></thead><tbody>${fields}</tbody></table></div><div class="callout">${escapeHtml(operation.note)}</div></div></details>`;
+                sections.insertAdjacentHTML("beforeend", details);
+            }
+
+            const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+            const socketUrl = document.getElementById("socket-url");
+            const flutterSample = document.getElementById("flutter-sample");
+            const defaultSocketUrl = `${protocol}//${location.host}`;
+            socketUrl.value = defaultSocketUrl;
+            document.getElementById("endpoint-label").textContent = defaultSocketUrl;
+
+            function updateFlutterSample() {
+                const dartUrl = socketUrl.value.trim().replaceAll("'", "\\'");
+                flutterSample.textContent = `import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+final channel = WebSocketChannel.connect(
+    Uri.parse('${dartUrl}'),
+);
+
+channel.stream.listen((frame) {
+    final message = jsonDecode(frame as String)
+            as Map<String, dynamic>;
+    if (message['type'] == 'otp-sent') {
+        print(message['mockCode']); // mock mode only
+    } else if (message['type'] == 'results') {
+        final ads = message['data'] as List<dynamic>;
+        print('Received ' + ads.length.toString() + ' ads');
+    }
+});
+
+channel.sink.add(jsonEncode({
+    'action': 'request_otp',
+    'phone': '09123456789',
+}));`;
+            }
+
+            updateFlutterSample();
+            let socket;
+            let eventCount = 0;
+            const stateLabel = document.getElementById("socket-state");
+            const eventList = document.getElementById("event-list");
+
+            function setConnectionState(connected, text) {
+                stateLabel.textContent = text;
+                stateLabel.classList.toggle("connected", connected);
+                document.querySelectorAll(".send-message").forEach((button) => {
+                    button.disabled = !connected;
+                });
+                document.getElementById("connect-button").textContent = connected
+                    ? "Disconnect"
+                    : "Connect";
+            }
+
+            function addEvent(value) {
+                if (eventCount === 0) eventList.innerHTML = "";
+                eventCount += 1;
+                document.getElementById("event-count").textContent = String(eventCount);
+                const card = document.createElement("article");
+                card.className = "event";
+                const type = value && value.type ? String(value.type) : "frame";
+                const head = document.createElement("div");
+                head.className = "event-head";
+                const name = document.createElement("strong");
+                name.textContent = type;
+                const time = document.createElement("time");
+                time.textContent = new Date().toLocaleTimeString();
+                head.append(name, time);
+                card.append(head);
+                const display = { ...value };
+                if (display.image) delete display.image;
+                const pre = document.createElement("pre");
+                pre.textContent = JSON.stringify(display, null, 2);
+                card.append(pre);
+                if (type === "screenshot" && value.image) {
+                    const image = document.createElement("img");
+                    image.alt = value.label || "Divar page screenshot";
+                    image.src = `data:image/jpeg;base64,${value.image}`;
+                    card.append(image);
+                }
+                eventList.prepend(card);
+                while (eventList.children.length > 35) eventList.lastElementChild.remove();
+            }
+
+            document.getElementById("connect-button").addEventListener("click", () => {
+                if (socket && socket.readyState <= WebSocket.OPEN) {
+                    socket.close();
+                    return;
+                }
+                try {
+                    socket = new WebSocket(socketUrl.value.trim());
+                } catch (error) {
+                    addEvent({ type: "client-error", message: error.message });
+                    return;
+                }
+                setConnectionState(false, "Connecting");
+                socket.addEventListener("open", () =>
+                    setConnectionState(true, "Connected"),
+                );
+                socket.addEventListener("message", (event) => {
+                    try {
+                        addEvent(JSON.parse(event.data));
+                    } catch {
+                        addEvent({ type: "frame", data: event.data });
+                    }
+                });
+                socket.addEventListener("error", () =>
+                    addEvent({
+                        type: "socket-error",
+                        message: "Connection failed; check the URL and server.",
+                    }),
+                );
+                socket.addEventListener("close", () =>
+                    setConnectionState(false, "Disconnected"),
+                );
+            });
+
+            document.querySelectorAll(".send-message").forEach((button) =>
+                button.addEventListener("click", () => {
+                    const editor = document.getElementById(button.dataset.request);
+                    try {
+                        const payload = JSON.parse(editor.value);
+                        if (!socket || socket.readyState !== WebSocket.OPEN)
+                            throw new Error("Connect to the WebSocket first.");
+                        socket.send(JSON.stringify(payload));
+                        addEvent({ type: "sent", payload });
+                    } catch (error) {
+                        addEvent({ type: "client-error", message: error.message });
+                    }
+                }),
+            );
+
+            document.querySelectorAll(".copy-json").forEach((button) =>
+                button.addEventListener("click", async () => {
+                    await navigator.clipboard.writeText(
+                        document.getElementById(button.dataset.request).value,
+                    );
+                    button.textContent = "Copied";
+                    setTimeout(() => {
+                        button.textContent = "Copy JSON";
+                    }, 1200);
+                }),
+            );
+            document
+                .querySelector(".copy-flutter")
+                .addEventListener("click", async (event) => {
+                    await navigator.clipboard.writeText(
+                        document.getElementById("flutter-sample").textContent,
+                    );
+                    event.currentTarget.textContent = "Copied";
+                    setTimeout(() => {
+                        event.currentTarget.textContent = "Copy Flutter sample";
+                    }, 1200);
+                });
+            document.getElementById("clear-events").addEventListener("click", () => {
+                eventList.innerHTML =
+                    '<p class="empty-feed">No frames yet. Send a request to see responses.</p>';
+                eventCount = 0;
+                document.getElementById("event-count").textContent = "0";
+            });
+            socketUrl.addEventListener("input", () => {
+                document.getElementById("endpoint-label").textContent = socketUrl.value;
+                updateFlutterSample();
+            });
+            document.querySelectorAll(".nav-link").forEach((link) =>
+                link.addEventListener("click", () => {
+                    document
+                        .querySelectorAll(".nav-link")
+                        .forEach((item) => item.classList.remove("active"));
+                    link.classList.add("active");
+                    const target = document.querySelector(link.getAttribute("href"));
+                    if (target) target.open = true;
+                }),
+            );
+            setConnectionState(false, "Disconnected");
+        </script>
+    </body>
+</html>

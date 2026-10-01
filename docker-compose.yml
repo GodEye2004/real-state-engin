@@ -9,6 +9,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8080
+      DB_PORT: ${DB_PORT:-${PORT:-5432}}
+      OTP_MODE: ${OTP_MODE:-disabled}
       PLAYWRIGHT_HEADLESS: "true"
     ports:
       - "8080:8080"

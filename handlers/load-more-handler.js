@@ -1,16 +1,28 @@
 export function createLoadMoreHandler({
     scraper,
     shared,
+    buildDivarRequest,
     applyPostFilters,
     scoreAds,
     broadcastStatus,
     sendInfo,
+    getUserState,
+    saveSearchResults,
 }) {
     return async function handleLoadMore(ws) {
         shared.busy = true;
+        const reportStatus = (step, status, message, progress = null) =>
+            broadcastStatus(step, status, message, progress, ws);
 
         try {
-            const { page } = await scraper.ensureBrowser();
+            const userState = getUserState(ws);
+            if (!ws.userId || !userState.searchId) {
+                sendInfo(ws, "Start a search before requesting more ads");
+                return;
+            }
+
+            const { url } = buildDivarRequest(userState.search);
+            const page = await scraper.navigateToSearch(url);
 
             const capturedAds = await scraper.scrollToLoadAds(page, {
                 maxRounds: 10,
@@ -19,7 +31,7 @@ export function createLoadMoreHandler({
                 onProgress: ({ round, maxRounds, adsCollected }) => {
                     const progress = Math.round((round / maxRounds) * 100);
 
-                    broadcastStatus(
+                    reportStatus(
                         "scroll",
                         "running",
                         `${adsCollected || 0} آگهی جمع‌آوری شد`,
@@ -27,30 +39,32 @@ export function createLoadMoreHandler({
                     );
                 },
             });
-
+            // apply post-filters to the ads and score them based on the last search criteria
             const filteredAds = applyPostFilters(
                 await scraper.collectAds(page, capturedAds),
-                shared.lastPostFilters,
+                userState.postFilters,
                 { scoreBoundsOnly: true },
             );
             const newAds = filteredAds.filter(
-                (ad) => !shared.seenAds.has(ad.link),
+                (ad) => !userState.seenAds.has(ad.link),
             );
-            const ads = scoreAds(newAds, shared.lastSearch || {}, {
-                weights: shared.lastSearch?.match_weights || undefined,
+            const ads = scoreAds(newAds, userState.search || {}, {
+                weights: userState.search?.match_weights || undefined,
+            });
+
+            await saveSearchResults({
+                searchId: userState.searchId,
+                userId: ws.userId,
+                ads,
             });
 
             ads.forEach((ad) => {
-                shared.seenAds.add(ad.link);
+                userState.seenAds.add(ad.link);
             });
 
-            shared.adCount += ads.length;
+            userState.adCount += ads.length;
 
-            broadcastStatus(
-                "collect",
-                "done",
-                `${ads.length} آگهی جدید یافت شد`,
-            );
+            reportStatus("collect", "done", `${ads.length} آگهی جدید یافت شد`);
 
             ws.send(
                 JSON.stringify({
@@ -63,7 +77,7 @@ export function createLoadMoreHandler({
             ws.send(
                 JSON.stringify({
                     type: "ad-count",
-                    count: shared.adCount,
+                    count: userState.adCount,
                 }),
             );
         } catch (error) {
@@ -71,7 +85,7 @@ export function createLoadMoreHandler({
 
             sendInfo(ws, `خطا: ${error.message}`);
 
-            broadcastStatus("error", "error", `خطا: ${error.message}`);
+            reportStatus("error", "error", `خطا: ${error.message}`);
         } finally {
             shared.busy = false;
         }

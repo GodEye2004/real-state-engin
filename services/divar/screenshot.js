@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 
-export async function sendScreenshot(scraper, wss, label) {
+export async function sendScreenshot(scraper, wss, label, recipient = null) {
     try {
         const { page } = await scraper.ensureBrowser();
         if (!page || page.isClosed()) return;
@@ -19,7 +19,8 @@ export async function sendScreenshot(scraper, wss, label) {
             label,
         });
 
-        wss.clients.forEach((client) => {
+        const recipients = recipient ? [recipient] : wss.clients;
+        recipients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(payload);
             }

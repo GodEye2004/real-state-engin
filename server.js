@@ -4,31 +4,59 @@ import WebSocket, { WebSocketServer } from "ws";
 import {
   buildDivarRequest,
   applyPostFilters,
-} from "./services/divar_adapter.js";
-import * as scraper from "./services/scrape_divar_ads.js";
-import { sendScreenshot } from "./services/screenshot.js";
-import { createMonitor } from "./services/start_monitoring.js";
-import { normalizeSearchInput } from "./services/search_normalizer.js";
-import { scoreAds } from "./services/ad_match_scorer.js";
-import { parseSearchPrompt } from "./services/search_parser.js";
+} from "./services/divar/divar_adapter.js";
+import * as scraper from "./services/divar/scrape_divar_ads.js";
+import { sendScreenshot } from "./services/divar/screenshot.js";
+import { createMonitor } from "./monitoring_service/start_monitoring.js";
+import { normalizeSearchInput } from "./services/search/search_normalizer.js";
+import { scoreAds } from "./services/ads/ad_match_scorer.js";
+import { parseSearchPrompt } from "./services/ai/search_parser.js";
 import { setupWebSocket } from "./websocket.js";
 import { createLoadMoreHandler } from "./handlers/load-more-handler.js";
 import { createStructuredSearchHandler } from "./handlers/search-handler.js";
+import {
+  connectDatabase,
+  createDatabaseClient,
+} from "./services/database/database.js";
+import {
+  closeUserSession,
+  createSearchRecord,
+  persistSearchResults,
+} from "./services/database/persistence.js";
+import { createAuthHandler } from "./handlers/auth-handler.js";
+import { handleHttpRequest } from "./api_docs/http-handler.js";
 
 dotenv.config();
 
+const prisma = createDatabaseClient();
+const handleAuth = createAuthHandler({
+  prisma,
+  allowMockOtp:
+    process.env.NODE_ENV !== "production" || process.env.OTP_MODE === "mock",
+  onSessionClosed: (sessionId) => shared.activeSearches.delete(sessionId),
+});
 const PORT = Number(process.env.PORT || 8080);
 const MONITOR_INTERVAL_MS = 30000;
 // const SCREENSHOT_QUALITY = 60;
 
-const server = createServer();
+const server = createServer(handleHttpRequest);
 const wss = new WebSocketServer({ server });
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`WebSocket server is running on ws://0.0.0.0:${PORT}`);
 });
 
-function broadcastStatus(step, status, message, progress = null) {
+connectDatabase(prisma).catch((error) => {
+  console.error("[Database] PostgreSQL connection failed:", error.message);
+});
+
+function broadcastStatus(
+  step,
+  status,
+  message,
+  progress = null,
+  recipient = null,
+) {
   const payload = {
     type: "status",
     step,
@@ -39,7 +67,8 @@ function broadcastStatus(step, status, message, progress = null) {
 
   const data = JSON.stringify(payload);
 
-  wss.clients.forEach((client) => {
+  const recipients = recipient ? [recipient] : wss.clients;
+  recipients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
     }
@@ -53,13 +82,30 @@ function sendInfo(ws, message) {
 }
 
 const shared = {
-  seenAds: new Set(),
+  activeSearches: new Map(),
   monitor: null,
-  lastSearch: null,
-  lastPostFilters: null,
   busy: false,
-  adCount: 0,
 };
+
+function getUserState(ws) {
+  if (
+    !ws.userState ||
+    ws.userState.userId !== ws.userId ||
+    ws.userState.sessionId !== ws.sessionId
+  ) {
+    ws.userState = {
+      userId: ws.userId,
+      sessionId: ws.sessionId,
+      searchId: null,
+      search: null,
+      postFilters: null,
+      seenAds: new Set(),
+      adCount: 0,
+    };
+  }
+
+  return ws.userState;
+}
 
 const monitor = createMonitor({
   shared,
@@ -69,6 +115,7 @@ const monitor = createMonitor({
   buildDivarRequest,
   applyPostFilters,
   scoreAds,
+  saveSearchResults: (data) => persistSearchResults(prisma, data),
   monitorIntervalMs: MONITOR_INTERVAL_MS,
 });
 
@@ -77,10 +124,13 @@ monitor.startMonitoring();
 const handleLoadMore = createLoadMoreHandler({
   scraper,
   shared,
+  buildDivarRequest,
   applyPostFilters,
   scoreAds,
   broadcastStatus,
   sendInfo,
+  getUserState,
+  saveSearchResults: (data) => persistSearchResults(prisma, data),
 });
 
 const handleStructuredSearch = createStructuredSearchHandler({
@@ -92,8 +142,11 @@ const handleStructuredSearch = createStructuredSearchHandler({
   normalizeSearchInput,
   broadcastStatus,
   sendInfo,
-  sendScreenshot: (label) => sendScreenshot(scraper, wss, label),
+  sendScreenshot: (label, ws) => sendScreenshot(scraper, wss, label, ws),
   startMonitoring: monitor.startMonitoring,
+  getUserState,
+  createSearch: (data) => createSearchRecord(prisma, data),
+  saveSearchResults: (data) => persistSearchResults(prisma, data),
 });
 
 function withTimeout(promise, ms) {
@@ -137,7 +190,14 @@ setupWebSocket({
   shared,
   broadcastStatus,
   sendInfo,
-  handleLoadMore,
-  handleStructuredSearch,
-  handleSearch,
+  closeSession: async ({ sessionId, userId }) => {
+    shared.activeSearches.delete(sessionId);
+    return closeUserSession(prisma, { sessionId, userId });
+  },
+  apiHandlers: {
+    auth: handleAuth,
+    loadMore: (ws) => handleLoadMore(ws),
+    structuredSearch: (ws, data) => handleStructuredSearch(ws, data),
+    textSearch: (ws, data) => handleSearch(ws, data.text),
+  },
 });

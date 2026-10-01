@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createLoadMoreHandler } from "./load-more-handler.js";
-import { scoreAds } from "../services/ad_match_scorer.js";
-import { applyPostFilters } from "../services/divar_adapter.js";
+import { scoreAds } from "../services/ads/ad_match_scorer.js";
+import { applyPostFilters } from "../services/divar/divar_adapter.js";
 
 test("load more sends unseen ads and maintains the cumulative count", async () => {
     const capturedAds = [
@@ -15,17 +15,22 @@ test("load more sends unseen ads and maintains the cumulative count", async () =
         },
         { id: "new", link: "new", price: 7_500_000_000, area: 115 },
     ];
-    const shared = {
-        busy: false,
+    const userState = {
         seenAds: new Set(["seen"]),
-        lastSearch: { price_max: 8_000_000_000 },
-        lastPostFilters: { price_max: 8_000_000_000, size_min: 110 },
+        searchId: "search-1",
+        search: { price_max: 8_000_000_000 },
+        postFilters: { price_max: 8_000_000_000, size_min: 110 },
         adCount: 1,
     };
+    const shared = { busy: false };
     const messages = [];
+    let savedResults;
     const handler = createLoadMoreHandler({
         scraper: {
-            ensureBrowser: async () => ({ page: {} }),
+            navigateToSearch: async (url) => {
+                assert.equal(url, "https://divar.test/user-search");
+                return {};
+            },
             scrollToLoadAds: async (_page, options) => {
                 assert.equal(options.maxRounds, 10);
                 return capturedAds;
@@ -33,13 +38,22 @@ test("load more sends unseen ads and maintains the cumulative count", async () =
             collectAds: async (_page, ads) => ads,
         },
         shared,
+        buildDivarRequest: () => ({ url: "https://divar.test/user-search" }),
         applyPostFilters,
         scoreAds,
         broadcastStatus: () => {},
         sendInfo: () => {},
+        getUserState: () => userState,
+        saveSearchResults: async (data) => {
+            savedResults = data;
+        },
     });
 
-    await handler({ send: (message) => messages.push(JSON.parse(message)) });
+    await handler({
+        userId: "user-1",
+        sessionId: "session-1",
+        send: (message) => messages.push(JSON.parse(message)),
+    });
 
     const results = messages.find((message) => message.type === "results");
     const count = messages.find((message) => message.type === "ad-count");
@@ -48,6 +62,12 @@ test("load more sends unseen ads and maintains the cumulative count", async () =
         ["new", "near-match"],
     );
     assert.equal(count.count, 3);
-    assert.equal(shared.seenAds.has("near-match"), true);
+    assert.equal(userState.seenAds.has("near-match"), true);
+    assert.equal(savedResults.searchId, "search-1");
+    assert.equal(savedResults.userId, "user-1");
+    assert.deepEqual(
+        savedResults.ads.map((ad) => ad.id),
+        ["new", "near-match"],
+    );
     assert.equal(shared.busy, false);
 });

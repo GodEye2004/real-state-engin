@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { MATCH_CONFIG, scoreAds } from "./services/ad_match_scorer.js";
+import { MATCH_CONFIG, scoreAds } from "./ad_match_scorer.js";
 
 const listings = [
     {

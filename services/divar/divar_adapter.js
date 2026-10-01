@@ -103,6 +103,7 @@ function buildDivarRequest(search) {
 
   // Post-filters: apply in JS after scraping for extra precision
   // (Divar may return slightly off results for some param combinations)
+  // in here we pass what filter we want to apply on divar.
   const postFilters = {};
   if (search.type) {
     postFilters.type = search.type;

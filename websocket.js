@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import { resolveApiOperation } from "./api_docs/api-registry.js";
 
 export function setupWebSocket({
     wss,
@@ -6,21 +7,32 @@ export function setupWebSocket({
     shared,
     broadcastStatus,
     sendInfo,
-    handleLoadMore,
-    handleStructuredSearch,
-    handleSearch,
+    apiHandlers,
+    closeSession,
 }) {
-    wss.on("connection", async (ws) => {
+    wss.on("connection", (ws) => {
         console.log(`New client connected! (${wss.clients.size} total)`);
 
-        await handleConnection(ws);
+        let messageQueue = handleConnection(ws);
 
         ws.on("message", (message) => {
-            handleMessage(ws, message);
+            messageQueue = messageQueue.then(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    return handleMessage(ws, message);
+                }
+            });
         });
 
         ws.on("close", () => {
             console.log(`Client disconnected. (${wss.clients.size} left)`);
+            if (ws.sessionId && ws.userId) {
+                closeSession({
+                    sessionId: ws.sessionId,
+                    userId: ws.userId,
+                }).catch((error) => {
+                    console.error("[Session] Close failed:", error.message);
+                });
+            }
         });
     });
 
@@ -50,31 +62,22 @@ export function setupWebSocket({
         try {
             const data = JSON.parse(message.toString());
 
-            if (data.action === "load_more") {
-                if (shared.busy) {
-                    return sendInfo(ws, "صبر کنید...");
-                }
+            const operation = resolveApiOperation(data);
+            if (!operation) return;
 
-                await handleLoadMore(ws);
-                return;
+            if (operation.requiresIdle && shared.busy) {
+                return sendInfo(ws, "صبر کنید...");
             }
 
-            if (data.action === "structured_search") {
-                if (shared.busy) {
-                    return sendInfo(ws, "صبر کنید...");
-                }
-
-                await handleStructuredSearch(ws, data);
-                return;
+            const handler = apiHandlers[operation.handlerKey];
+            if (!handler) {
+                return sendInfo(
+                    ws,
+                    `Action ${operation.action} is not configured`,
+                );
             }
 
-            if (data.text) {
-                if (shared.busy) {
-                    return sendInfo(ws, "صبر کنید...");
-                }
-
-                await handleSearch(ws, data.text);
-            }
+            await handler(ws, data);
         } catch (error) {
             console.error("[WebSocket] Message handling error:", error.message);
 

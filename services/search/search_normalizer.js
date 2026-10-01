@@ -1,4 +1,4 @@
-import { CATEGORY_MAP } from "./divar_adapter.js";
+import { CATEGORY_MAP } from "../divar/divar_adapter.js";
 
 const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
 
