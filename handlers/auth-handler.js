@@ -201,7 +201,11 @@ export function createAuthHandler({
             if (result.closedSessionId) onSessionClosed(result.closedSessionId);
             ws.userId = result.user.id;
             ws.sessionId = result.sessionId;
-            send(ws, { type: "signup-complete", user: result.user });
+            send(ws, {
+                type: "signup-complete",
+                user: result.user,
+                sessionId: result.sessionId,
+            });
         } catch (error) {
             console.error("[Auth] OTP verification failed:", error.message);
             send(ws, {
@@ -212,11 +216,95 @@ export function createAuthHandler({
         }
     }
 
+    // Re-authenticate a brand new socket from a session the client stored on
+    // disk. The old row is only proof of identity: every connection gets its
+    // own session so the disconnect of a previous run cannot lock the user out.
+    async function resumeSession(ws, phoneValue, sessionId) {
+        const phone = normalizePhone(phoneValue);
+
+        const fail = (message) => {
+            send(ws, {
+                type: "auth-error",
+                action: "resume_session",
+                message,
+            });
+        };
+
+        if (!phone || typeof sessionId !== "string" || !sessionId) {
+            return fail("Stored session is not valid");
+        }
+
+        try {
+            const result = await prisma.$transaction(async (transaction) => {
+                const previous = await transaction.session.findUnique({
+                    where: { id: sessionId },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                phone: true,
+                                createdAt: true,
+                                updatedAt: true,
+                            },
+                        },
+                    },
+                });
+
+                if (!previous || previous.user.phone !== phone) {
+                    return { error: "Session expired, sign in again" };
+                }
+
+                const now = new Date();
+
+                if (previous.isActive) {
+                    await transaction.session.updateMany({
+                        where: {
+                            id: previous.id,
+                            userId: previous.userId,
+                            isActive: true,
+                        },
+                        data: {
+                            disconnectedAt: now,
+                            isActive: false,
+                        },
+                    });
+                }
+
+                const session = await transaction.session.create({
+                    data: { userId: previous.userId },
+                    select: { id: true },
+                });
+
+                return {
+                    user: previous.user,
+                    sessionId: session.id,
+                    closedSessionId: previous.isActive ? previous.id : null,
+                };
+            });
+
+            if (result.error) return fail(result.error);
+
+            if (result.closedSessionId) onSessionClosed(result.closedSessionId);
+            ws.userId = result.user.id;
+            ws.sessionId = result.sessionId;
+            send(ws, {
+                type: "session-resumed",
+                user: result.user,
+                sessionId: result.sessionId,
+            });
+        } catch (error) {
+            console.error("[Auth] Session resume failed:", error.message);
+            fail("Could not resume the session");
+        }
+    }
+
     return async function handleAuth(ws, data) {
         if (data.action === "request_otp") {
             await requestOtp(ws, data.phone);
         } else if (data.action === "verify_otp") {
             await verifyOtp(ws, data.phone, data.code);
+        } else if (data.action === "resume_session") {
+            await resumeSession(ws, data.phone, data.sessionId);
         }
     };
 }

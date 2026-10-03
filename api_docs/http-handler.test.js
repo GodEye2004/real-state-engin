@@ -50,6 +50,7 @@ test("publishes the same registered actions consumed by WebSocket dispatch", asy
         [
             "request_otp",
             "verify_otp",
+            "resume_session",
             "structured_search",
             "text_search",
             "load_more",

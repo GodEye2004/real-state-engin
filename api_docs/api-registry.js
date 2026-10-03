@@ -51,8 +51,43 @@ export const API_OPERATIONS = [
                 createdAt: "ISO date",
                 updatedAt: "ISO date",
             },
+            sessionId: "<sessionId for resume-session>",
         },
-        note: "Codes expire after five minutes, allow five attempts, and can only be used once. This flow does not issue a JWT.",
+        note: "Codes expire after five minutes, allow five attempts, and can only be used once. This flow does not issue a JWT; the returned sessionId is the credential for resume-session.",
+    },
+    {
+        id: "resume-session",
+        group: "Authentication",
+        title: "Resume saved session",
+        action: "resume_session",
+        handlerKey: "auth",
+        description:
+            "Re-authenticate a fresh WebSocket using the phone and sessionId stored by the client, so an app restart does not require a new OTP.",
+        request: {
+            action: "resume_session",
+            phone: "09123456789",
+            sessionId: "<sessionId from signup-complete>",
+        },
+        responses: ["session-resumed", "auth-error"],
+        fields: [
+            ["phone", "string", "The phone of the stored account."],
+            [
+                "sessionId",
+                "string",
+                "Session id returned by signup-complete or a previous session-resumed.",
+            ],
+        ],
+        example: {
+            type: "session-resumed",
+            user: {
+                id: "uuid",
+                phone: "09123456789",
+                createdAt: "ISO date",
+                updatedAt: "ISO date",
+            },
+            sessionId: "<new sessionId for this connection>",
+        },
+        note: "A new session row is created for the new connection and the old one is closed. Send it right after the socket opens; auth-error means the stored session is gone and OTP is required.",
     },
     {
         id: "structured-search",
@@ -196,6 +231,10 @@ export const API_RESPONSE_EVENTS = [
     {
         type: "signup-complete",
         description: "Created or existing user record.",
+    },
+    {
+        type: "session-resumed",
+        description: "Stored session accepted; socket is authenticated.",
     },
     {
         type: "applied-filters",

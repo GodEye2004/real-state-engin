@@ -76,6 +76,17 @@ function createMockPrisma() {
             },
         },
         session: {
+            async findUnique({ where, include }) {
+                const session = state.sessions.find(
+                    (item) => item.id === where.id,
+                );
+                if (!session) return null;
+                const user = state.users.find(
+                    (item) => item.id === session.userId,
+                );
+                if (!include?.user) return session;
+                return { ...session, user: { ...user } };
+            },
             async create({ data }) {
                 const session = {
                     id: randomUUID(),
@@ -136,6 +147,46 @@ test("mock OTP signup verifies the code and creates a user", async () => {
     assert.equal(ws.sessionId, state.sessions[0].id);
     assert.equal(state.users.length, 1);
     assert.equal(state.otpCodes.length, 0);
+});
+
+test("resume_session re-authenticates a new socket without an OTP", async () => {
+    const { prisma, state } = createMockPrisma();
+    const messages = [];
+    const handleAuth = createAuthHandler({ prisma });
+    const signupWs = { send: (m) => messages.push(JSON.parse(m)) };
+
+    await handleAuth(signupWs, { action: "request_otp", phone: "09123456789" });
+    const otp = messages.at(-1);
+    await handleAuth(signupWs, {
+        action: "verify_otp",
+        phone: otp.phone,
+        code: otp.mockCode,
+    });
+    const completed = messages.at(-1);
+
+    const resumeMessages = [];
+    const resumeWs = { send: (m) => resumeMessages.push(JSON.parse(m)) };
+    await handleAuth(resumeWs, {
+        action: "resume_session",
+        phone: completed.user.phone,
+        sessionId: completed.sessionId,
+    });
+
+    const resumed = resumeMessages.at(-1);
+    assert.equal(resumed.type, "session-resumed");
+    assert.equal(resumed.user.id, completed.user.id);
+    assert.equal(resumeWs.userId, completed.user.id);
+    assert.notEqual(resumed.sessionId, completed.sessionId);
+    assert.equal(state.sessions.length, 2);
+    assert.equal(state.sessions[0].isActive, false);
+    assert.equal(state.sessions[1].isActive, true);
+
+    const wrongMessages = [];
+    await handleAuth(
+        { send: (m) => wrongMessages.push(JSON.parse(m)) },
+        { action: "resume_session", phone: "09123456789", sessionId: "nope" },
+    );
+    assert.equal(wrongMessages.at(-1).type, "auth-error");
 });
 
 test("mock OTP requests are rejected when disabled", async () => {
